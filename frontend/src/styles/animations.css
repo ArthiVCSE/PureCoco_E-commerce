@@ -1,0 +1,51 @@
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes scale-in {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
+
+.bg-grid-pattern {
+  background-size: 20px 20px;
+  background-image: linear-gradient(to right, rgba(90, 70, 51, 0.08) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(90, 70, 51, 0.08) 1px, transparent 1px);
+}
+
+html.dark .bg-grid-pattern {
+  background-image: linear-gradient(to right, rgba(247, 243, 236, 0.06) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(247, 243, 236, 0.06) 1px, transparent 1px);
+}

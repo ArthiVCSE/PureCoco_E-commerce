@@ -1,0 +1,118 @@
+@import './variables.css';
+@import './animations.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply font-sans text-base leading-relaxed bg-cream text-coconut antialiased transition-colors duration-300;
+  }
+
+  html.dark body {
+    @apply bg-coconut-dark text-cream;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold text-coconut dark:text-cream;
+  }
+
+  ::selection {
+    @apply bg-gold/30 text-coconut;
+  }
+
+  html.dark ::selection {
+    @apply text-cream;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-gold;
+  }
+
+  input, select, textarea {
+    @apply font-sans text-coconut bg-white;
+  }
+
+  html.dark input,
+  html.dark select,
+  html.dark textarea {
+    @apply text-cream bg-coconut-light/30;
+  }
+}
+
+@layer components {
+  .container-main {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-16 md:py-24;
+  }
+
+  .glass {
+    @apply bg-white/95 dark:bg-coconut/95 backdrop-blur-md border border-coconut/20 dark:border-cream/20 shadow-soft;
+  }
+
+  .card {
+    @apply rounded-xl bg-white dark:bg-coconut-light/25 shadow-soft border border-coconut/10 dark:border-cream/10;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-card;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-gold to-natural bg-clip-text text-transparent;
+  }
+
+  .text-muted {
+    @apply text-coconut/70 dark:text-cream/75;
+  }
+
+  .text-body {
+    @apply text-coconut dark:text-cream;
+  }
+
+  .heading-section {
+    @apply font-display text-3xl md:text-4xl font-bold text-coconut dark:text-cream;
+  }
+
+  .skeleton {
+    @apply bg-gradient-to-r from-cream-dark via-white to-cream-dark bg-[length:200%_100%] animate-shimmer rounded;
+  }
+
+  html.dark .skeleton {
+    @apply from-coconut-light via-coconut to-coconut-light;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg px-5 py-2.5 text-sm bg-coconut text-cream hover:bg-coconut-light transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold;
+  }
+
+  .section-title {
+    @apply font-display text-2xl sm:text-3xl font-bold text-coconut dark:text-cream;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
