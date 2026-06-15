@@ -51,6 +51,18 @@ exports.getProductReviews = async (req, res) => {
   }
 };
 
+exports.getReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .populate('user', 'name email avatar')
+      .populate('product', 'name images price')
+      .sort('-createdAt');
+    res.json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.deleteReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);

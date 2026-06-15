@@ -8,6 +8,7 @@ router.post('/', createMessage);
 router.get('/', protect, admin, getMessages);
 router.get('/:id', protect, admin, getMessageById);
 router.put('/:id', protect, admin, updateMessageStatus);
+router.patch('/:id', protect, admin, updateMessageStatus);
 router.delete('/:id', protect, admin, deleteMessage);
 
 module.exports = router;

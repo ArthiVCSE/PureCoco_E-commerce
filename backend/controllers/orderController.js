@@ -1,17 +1,52 @@
 const Order = require('../models/Order');
+const Notification = require('../models/Notification');
+const Product = require('../models/Product');
 const { sendEmail } = require('../utils/sendEmail');
+
+const calculateOrderTotals = async (items = []) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('Order must include at least one item');
+  }
+
+  const ids = items.map(item => item.product).filter(Boolean);
+  const products = await Product.find({ _id: { $in: ids }, isActive: true });
+  const productMap = new Map(products.map(product => [product._id.toString(), product]));
+
+  const normalizedItems = items.map(item => {
+    const quantity = Number(item.quantity) || 1;
+    const product = productMap.get(item.product?.toString());
+    if (!product) throw new Error(`Product not found: ${item.name || item.product}`);
+    if (!product.inStock || product.stock < quantity) {
+      throw new Error(`${product.name} is not available in requested quantity`);
+    }
+
+    return {
+      product: product._id,
+      name: product.name,
+      price: product.price,
+      quantity,
+      image: product.images?.[0] || '',
+    };
+  });
+
+  const subtotal = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shipping = subtotal > 999 ? 0 : 79;
+  return { items: normalizedItems, subtotal, shipping, total: subtotal + shipping };
+};
 
 exports.createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, paymentMethod, subtotal, shipping, total } = req.body;
+    const { items, shippingAddress, paymentMethod } = req.body;
+    const totals = await calculateOrderTotals(items);
     const order = await Order.create({
       user: req.user._id,
-      items,
+      items: totals.items,
       shippingAddress,
       paymentMethod,
-      subtotal,
-      shipping,
-      total,
+      paymentStatus: 'pending',
+      subtotal: totals.subtotal,
+      shipping: totals.shipping,
+      total: totals.total,
       status: 'processing',
       tracking: {
         carrier: 'BlueDart',
@@ -20,10 +55,23 @@ exports.createOrder = async (req, res) => {
       },
     });
 
+    await Promise.all(totals.items.map(item =>
+      Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } })
+    ));
+
+    await Notification.create({
+      userId: req.user._id,
+      type: 'order',
+      title: 'New order placed',
+      message: `Order #${order._id.toString().slice(-8).toUpperCase()} was placed for INR ${totals.total}.`,
+      orderId: order._id,
+      sendEmail: false,
+    });
+
     await sendEmail({
       to: shippingAddress.email,
       subject: `PureCoco Order Confirmation #${order._id.toString().slice(-6)}`,
-      html: `<h2>Thank you for your order!</h2><p>Order total: ₹${total}</p><p>Track your order at purecoco.in/track/${order._id}</p>`,
+      html: `<h2>Thank you for your order!</h2><p>Order total: INR ${totals.total}</p><p>Track your order at purecoco.in/track/${order._id}</p>`,
     });
 
     res.status(201).json(order);
@@ -45,6 +93,9 @@ exports.getOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to view this order' });
+    }
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -78,6 +129,18 @@ exports.updateOrderStatus = async (req, res) => {
       { new: true }
     );
     if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (status) {
+      await Notification.create({
+        userId: order.user,
+        type: status === 'out-for-delivery' ? 'delivery' : 'order',
+        title: `Order ${status}`,
+        message: `Your order #${order._id.toString().slice(-8).toUpperCase()} is now ${status}.`,
+        orderId: order._id,
+        sendEmail: false,
+      });
+    }
+
     res.json(order);
   } catch (error) {
     res.status(400).json({ message: error.message });

@@ -44,7 +44,12 @@ exports.createNotification = async (req, res) => {
 exports.getUserNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
-    const notifications = await Notification.find({ userId }).sort({ createdAt: -1 });
+    if (userId !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to view these notifications' });
+    }
+    const notifications = await Notification.find({
+      $or: [{ userId }, { userId: { $exists: false } }, { userId: null }],
+    }).sort({ createdAt: -1 });
     res.json(notifications);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -63,6 +68,11 @@ exports.getNotifications = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
+    const existing = await Notification.findById(id);
+    if (!existing) return res.status(404).json({ message: 'Notification not found' });
+    if (existing.userId && existing.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to update this notification' });
+    }
     const notification = await Notification.findByIdAndUpdate(
       id,
       { isRead: true, readAt: new Date() },
@@ -78,6 +88,9 @@ exports.markAsRead = async (req, res) => {
 exports.markAllAsRead = async (req, res) => {
   try {
     const { userId } = req.params;
+    if (userId !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to update these notifications' });
+    }
     await Notification.updateMany({ userId, isRead: false }, { isRead: true, readAt: new Date() });
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
@@ -87,8 +100,15 @@ exports.markAllAsRead = async (req, res) => {
 
 exports.deleteNotification = async (req, res) => {
   try {
-    const notification = await Notification.findByIdAndDelete(req.params.id);
+    const notification = await Notification.findById(req.params.id);
     if (!notification) return res.status(404).json({ message: 'Notification not found' });
+    if (
+      (!notification.userId && req.user.role !== 'admin') ||
+      (notification.userId && notification.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin')
+    ) {
+      return res.status(403).json({ message: 'Not authorized to delete this notification' });
+    }
+    await notification.deleteOne();
     res.json({ message: 'Notification deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

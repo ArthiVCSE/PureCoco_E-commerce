@@ -1,4 +1,5 @@
 const Message = require('../models/Message');
+const Notification = require('../models/Notification');
 const { sendEmail } = require('../utils/sendEmail');
 
 exports.createMessage = async (req, res) => {
@@ -10,6 +11,13 @@ exports.createMessage = async (req, res) => {
 
     const newMessage = new Message({ name, email, message });
     await newMessage.save();
+
+    await Notification.create({
+      type: 'announcement',
+      title: 'New customer message',
+      message: `${name} sent a support message: ${message.slice(0, 120)}`,
+      sendEmail: false,
+    });
 
     // Optional: Send confirmation email
     try {
@@ -43,6 +51,7 @@ exports.getMessageById = async (req, res) => {
     if (!message) return res.status(404).json({ message: 'Message not found' });
     if (!message.isRead) {
       message.isRead = true;
+      if (message.status === 'new') message.status = 'read';
       await message.save();
     }
     res.json(message);

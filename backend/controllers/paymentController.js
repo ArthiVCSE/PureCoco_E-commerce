@@ -1,14 +1,31 @@
-const Stripe = require('stripe');
 const Order = require('../models/Order');
 const { sendEmail } = require('../utils/sendEmail');
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const getStripe = () => {
+  if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_key_here')) return null;
+  try {
+    const Stripe = require('stripe');
+    return Stripe(process.env.STRIPE_SECRET_KEY);
+  } catch {
+    return null;
+  }
+};
 
 exports.createPaymentIntent = async (req, res) => {
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return res.status(503).json({ message: 'Stripe is not configured. Use demo payment mode.' });
+    }
     const { orderId } = req.body;
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to pay for this order' });
+    }
+    if (order.paymentStatus === 'paid') {
+      return res.status(400).json({ message: 'Order is already paid' });
+    }
 
     const amount = Math.round((order.total || 0) * 100); // smallest currency unit
 
@@ -25,7 +42,35 @@ exports.createPaymentIntent = async (req, res) => {
   }
 };
 
+exports.completeDemoPayment = async (req, res) => {
+  try {
+    if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('your_stripe_key_here')) {
+      return res.status(400).json({ message: 'Demo payment is disabled when Stripe is configured' });
+    }
+
+    const { orderId } = req.body;
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to update this payment' });
+    }
+    if (order.paymentMethod === 'cod') {
+      return res.status(400).json({ message: 'COD payments cannot be marked paid here' });
+    }
+
+    order.paymentStatus = 'paid';
+    await order.save();
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.handleWebhook = async (req, res) => {
+  const stripe = getStripe();
+  if (!stripe) {
+    return res.status(503).json({ message: 'Stripe is not configured' });
+  }
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
