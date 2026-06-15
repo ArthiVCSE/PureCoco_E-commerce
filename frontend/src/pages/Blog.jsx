@@ -58,7 +58,9 @@ const Blog = () => {
                       {truncateText(blog.excerpt, 120)}
                     </p>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-coconut/60 dark:text-cream/60 font-medium">{formatDate(blog.date)}</span>
+                      <span className="text-coconut/60 dark:text-cream/60 font-medium">
+                        {formatDate(blog.createdAt || blog.date, 'Recently published')}
+                      </span>
                       <span className="text-gold flex items-center gap-1 font-semibold group-hover:gap-2 transition-all">
                         Read More <ArrowRight size={14} />
                       </span>

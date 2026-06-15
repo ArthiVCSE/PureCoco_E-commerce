@@ -2,17 +2,36 @@ import { Link } from 'react-router-dom';
 import { Star, ShoppingBag, Heart } from 'lucide-react';
 import { formatCurrency, cn } from '../../utils/formatCurrency';
 import { useCart } from '../../hooks/useCart';
+import { useToast } from '../common/Toast';
+import wishlistService from '../../services/wishlistService';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import PurityScore from './PurityScore';
 
 const ProductCard = ({ product, index = 0, layout = 'grid' }) => {
   const { addItem } = useCart();
+  const { addToast } = useToast();
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
     addItem(product);
+  };
+
+  const handleWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await wishlistService.addToWishlist(product._id);
+      addToast(`${product.name} added to wishlist`, 'success');
+    } catch {
+      const stored = JSON.parse(localStorage.getItem('purecoco_wishlist') || '[]');
+      const exists = stored.some((item) => item._id === product._id);
+      if (!exists) {
+        localStorage.setItem('purecoco_wishlist', JSON.stringify([...stored, product]));
+      }
+      addToast(exists ? 'Already in wishlist' : `${product.name} added to wishlist`, exists ? 'info' : 'success');
+    }
   };
 
   if (layout === 'list') {
@@ -52,6 +71,7 @@ const ProductCard = ({ product, index = 0, layout = 'grid' }) => {
             </div>
             <div className="flex items-center gap-3">
               <PurityScore score={product.purityScore} compact />
+              <Button variant="ghost" size="sm" icon={Heart} onClick={handleWishlist} aria-label="Add to wishlist" />
               <Button variant="secondary" size="sm" icon={ShoppingBag} onClick={handleAddToCart}>
                 Add
               </Button>
@@ -88,7 +108,7 @@ const ProductCard = ({ product, index = 0, layout = 'grid' }) => {
 
         <button
           className="absolute top-3 right-3 p-2 rounded-full bg-white/90 dark:bg-coconut text-coconut dark:text-cream opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-gold hover:text-white"
-          onClick={(e) => e.preventDefault()}
+          onClick={handleWishlist}
           aria-label="Add to wishlist"
         >
           <Heart size={16} />

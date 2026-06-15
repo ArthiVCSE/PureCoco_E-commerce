@@ -7,12 +7,15 @@ export const formatCurrency = (amount, currency = 'INR') => {
   }).format(amount);
 };
 
-export const formatDate = (date) => {
+export const formatDate = (date, fallback = 'Date unavailable') => {
+  if (!date) return fallback;
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return fallback;
   return new Intl.DateTimeFormat('en-IN', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(new Date(date));
+  }).format(parsed);
 };
 
 export const formatRelativeTime = (date) => {
@@ -27,8 +30,9 @@ export const formatRelativeTime = (date) => {
 };
 
 export const truncateText = (text, maxLength = 100) => {
+  if (!text) return '';
   if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + '…';
+  return `${text.slice(0, maxLength).trim()}...`;
 };
 
 export const generateBatchId = () => {

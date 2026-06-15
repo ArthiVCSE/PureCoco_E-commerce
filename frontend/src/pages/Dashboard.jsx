@@ -10,6 +10,7 @@ import Badge from '../components/ui/Badge';
 import { formatCurrency, formatDate } from '../utils/formatCurrency';
 import { MOCK_PRODUCTS } from '../services/productService';
 import api from '../services/api';
+import wishlistService from '../services/wishlistService';
 import { useToast } from '../components/common/Toast';
 
 const Dashboard = () => {
@@ -36,6 +37,11 @@ const Dashboard = () => {
     if (isAuthenticated) {
       loadOrders();
       setProfileForm({ name: user?.name || '', email: user?.email || '' });
+      wishlistService.getWishlist()
+        .then((data) => {
+          if (Array.isArray(data)) setWishlist(data);
+        })
+        .catch(() => {});
     }
   }, [isAuthenticated, user]);
 
@@ -61,7 +67,12 @@ const Dashboard = () => {
     setEditingProfile(false);
   };
 
-  const removeFromWishlist = (id) => {
+  const removeFromWishlist = async (id) => {
+    try {
+      await wishlistService.removeFromWishlist(id);
+    } catch {
+      // Keep local fallback behavior for offline/demo usage.
+    }
     setWishlist(prev => prev.filter(w => w._id !== id));
     addToast('Removed from wishlist', 'info');
   };

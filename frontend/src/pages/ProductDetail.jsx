@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingBag, Heart, Share2, Star, Truck, Shield, RotateCcw, Minus, Plus, GitCompare } from 'lucide-react';
 import productService, { MOCK_REVIEWS } from '../services/productService';
+import wishlistService from '../services/wishlistService';
 import { useCart } from '../hooks/useCart';
+import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/common/Toast';
 import { formatCurrency, formatDate } from '../utils/formatCurrency';
 import { USAGE_RECOMMENDATIONS } from '../utils/constants';
@@ -11,6 +13,7 @@ import PurityScore from '../components/product/PurityScore';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { PageLoader } from '../components/common/Loader';
+import api from '../services/api';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -18,7 +21,12 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
+  const [reviews, setReviews] = useState(MOCK_REVIEWS);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
   const { addItem } = useCart();
+  const { isAuthenticated, user } = useAuth();
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -29,6 +37,18 @@ const ProductDetail = () => {
       setLoading(false);
     };
     fetchProduct();
+  }, [id]);
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const { data } = await api.get(`/reviews/product/${id}`);
+        if (Array.isArray(data) && data.length) setReviews(data);
+      } catch {
+        setReviews(MOCK_REVIEWS);
+      }
+    };
+    loadReviews();
   }, [id]);
 
   if (loading) return <PageLoader />;
@@ -44,6 +64,52 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     addItem(product, quantity);
     addToast(`${product.name} added to cart`, 'success');
+  };
+
+  const handleWishlist = async () => {
+    try {
+      await wishlistService.addToWishlist(product._id);
+      addToast(`${product.name} added to wishlist`, 'success');
+    } catch {
+      const stored = JSON.parse(localStorage.getItem('purecoco_wishlist') || '[]');
+      const exists = stored.some((item) => item._id === product._id);
+      if (!exists) {
+        localStorage.setItem('purecoco_wishlist', JSON.stringify([...stored, product]));
+      }
+      addToast(exists ? 'Already in wishlist' : `${product.name} added to wishlist`, exists ? 'info' : 'success');
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!reviewText.trim()) {
+      addToast('Please write a short review', 'warning');
+      return;
+    }
+    setReviewLoading(true);
+    const localReview = {
+      id: `local-${Date.now()}`,
+      user: user?.name || 'You',
+      rating: Number(reviewRating),
+      text: reviewText.trim(),
+      date: new Date().toISOString(),
+    };
+    try {
+      const { data } = await api.post('/reviews', {
+        productId: product._id,
+        rating: Number(reviewRating),
+        text: reviewText.trim(),
+      });
+      setReviews((prev) => [data, ...prev]);
+      addToast('Review submitted successfully', 'success');
+    } catch {
+      setReviews((prev) => [localReview, ...prev]);
+      addToast('Review saved locally for demo mode', 'info');
+    } finally {
+      setReviewText('');
+      setReviewRating(5);
+      setReviewLoading(false);
+    }
   };
 
   const tabs = [
@@ -114,7 +180,7 @@ const ProductDetail = () => {
             <Button variant="secondary" size="lg" icon={ShoppingBag} onClick={handleAddToCart} className="w-full sm:w-auto flex-1">
               Add to Cart
             </Button>
-            <Button variant="outline" size="lg" icon={Heart}>Wishlist</Button>
+            <Button variant="outline" size="lg" icon={Heart} onClick={handleWishlist}>Wishlist</Button>
             <Button variant="ghost" size="lg" icon={GitCompare}>
               <Link to={`/compare?ids=${product._id}`}>Compare</Link>
             </Button>
@@ -205,19 +271,48 @@ const ProductDetail = () => {
 
         {activeTab === 'reviews' && (
           <div className="space-y-6">
-            {MOCK_REVIEWS.map((review) => (
-              <div key={review.id} className="p-5 rounded-xl bg-white dark:bg-coconut-light/10 shadow-soft">
+            <form onSubmit={handleReviewSubmit} className="p-5 rounded-xl bg-white dark:bg-coconut-light/10 shadow-soft space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <label className="text-sm font-semibold text-body">Your Rating</label>
+                <select
+                  value={reviewRating}
+                  onChange={(e) => setReviewRating(e.target.value)}
+                  className="px-3 py-2 rounded-lg bg-white dark:bg-coconut-light/30 border border-coconut/20 dark:border-cream/20 text-body"
+                >
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <option key={rating} value={rating}>{rating} stars</option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder={isAuthenticated ? 'Share your experience with this product' : 'Write a review in demo mode'}
+                rows={3}
+                className="w-full px-4 py-3 rounded-lg bg-white dark:bg-coconut-light/30 border border-coconut/20 dark:border-cream/20 text-body focus:outline-none focus:ring-2 focus:ring-gold/50"
+              />
+              <Button type="submit" variant="secondary" loading={reviewLoading}>
+                Submit Review
+              </Button>
+            </form>
+
+            {reviews.map((review) => (
+              <div key={review._id || review.id} className="p-5 rounded-xl bg-white dark:bg-coconut-light/10 shadow-soft">
                 <div className="flex items-center gap-3 mb-3">
-                  <img src={review.image} alt="" className="w-10 h-10 rounded-full" />
+                  <img
+                    src={review.image || review.user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80'}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
                   <div>
-                    <p className="font-medium text-sm">{review.user}</p>
+                    <p className="font-medium text-sm">{review.user?.name || review.user || 'Customer'}</p>
                     <div className="flex gap-0.5">
                       {Array.from({ length: review.rating }).map((_, i) => (
                         <Star key={i} size={12} className="fill-gold text-gold" />
                       ))}
                     </div>
                   </div>
-                  <span className="ml-auto text-xs text-coconut/40">{formatDate(review.date)}</span>
+                  <span className="ml-auto text-xs text-coconut/40">{formatDate(review.createdAt || review.date)}</span>
                 </div>
                 <p className="text-sm text-coconut/70 dark:text-cream/70">{review.text}</p>
               </div>

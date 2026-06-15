@@ -7,6 +7,7 @@ import { ToastProvider } from './components/common/Toast';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import CartSidebar from './components/cart/CartSidebar';
+import AiAssistant from './components/common/AiAssistant';
 import { PageLoader } from './components/common/Loader';
 import { routes } from './routes';
 
@@ -18,6 +19,7 @@ const MainLayout = ({ children }) => (
     </main>
     <Footer />
     <CartSidebar />
+    <AiAssistant />
   </>
 );
 

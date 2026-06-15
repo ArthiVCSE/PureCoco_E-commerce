@@ -11,12 +11,11 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { cn } from '../utils/formatCurrency';
 import api from '../services/api';
-import paymentService from '../services/paymentService';
 
 const paymentMethods = [
-  { id: 'cod', label: 'Cash on Delivery', icon: Building2, desc: 'Pay when you receive' },
-  { id: 'card', label: 'Credit/Debit Card', icon: CreditCard, desc: 'Visa, Mastercard, RuPay' },
-  { id: 'upi', label: 'UPI', icon: Smartphone, desc: 'Google Pay, PhonePe, Paytm (Coming Soon)' },
+  { id: 'cod', label: 'Cash on Delivery', icon: Building2, desc: 'Pay when you receive the package' },
+  { id: 'card', label: 'Credit/Debit Card', icon: CreditCard, desc: 'Demo card payment confirmation' },
+  { id: 'upi', label: 'UPI', icon: Smartphone, desc: 'Demo UPI confirmation' },
 ];
 
 const Checkout = () => {
@@ -27,10 +26,14 @@ const Checkout = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState('cod');
-  const [orderId, setOrderId] = useState(null);
-  const [clientSecret, setClientSecret] = useState(null);
   const [form, setForm] = useState({
-    fullName: '', email: '', phone: '', address: '', city: '', pincode: '', state: 'Tamil Nadu',
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    pincode: '',
+    state: 'Tamil Nadu',
   });
   const [errors, setErrors] = useState({});
 
@@ -43,7 +46,6 @@ const Checkout = () => {
     );
   }
 
-  // Hard guard — redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login?redirect=/checkout" replace />;
   }
@@ -63,75 +65,54 @@ const Checkout = () => {
     setStep(2);
   };
 
-  const handlePaymentMethod = async (method) => {
-    setPayment(method);
+  const buildOrderPayload = (method) => ({
+    items: items.map((item) => ({
+      product: item._id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      image: item.images?.[0] || item.image || '',
+    })),
+    shippingAddress: form,
+    paymentMethod: method,
+    subtotal,
+    shipping,
+    total,
+  });
 
-    // If card is selected, create PaymentIntent
-    if (method === 'card') {
-      await handleCreateOrder();
-    }
+  const saveLocalOrder = (payload, paymentStatus) => {
+    const order = {
+      ...payload,
+      _id: `LOCAL${Date.now()}`,
+      status: 'processing',
+      paymentStatus,
+      createdAt: new Date().toISOString(),
+      tracking: {
+        carrier: 'PureCoco Delivery',
+        trackingId: `PC${Date.now()}`,
+        estimatedDelivery: new Date(Date.now() + 5 * 86400000).toISOString(),
+      },
+    };
+    const stored = JSON.parse(localStorage.getItem('purecoco_orders') || '[]');
+    localStorage.setItem('purecoco_orders', JSON.stringify([order, ...stored]));
+    return order;
   };
 
-  const handleCreateOrder = async () => {
+  const placeOrder = async (method) => {
     setLoading(true);
+    const payload = buildOrderPayload(method);
+    const paymentStatus = method === 'cod' ? 'pending' : 'paid';
+
     try {
-      const orderPayload = {
-        items: items.map((i) => ({
-          product: i._id,
-          name: i.name,
-          price: i.price,
-          quantity: i.quantity,
-          image: i.images?.[0] || '',
-        })),
-        shippingAddress: form,
-        paymentMethod: payment,
-        subtotal,
-        shipping,
-        total,
-      };
-
-      const { data: orderData } = await api.post('/orders', orderPayload);
-      setOrderId(orderData._id);
-
-      // Create PaymentIntent if card payment
-      if (payment === 'card') {
-        const paymentData = await paymentService.createPaymentIntent(orderData._id);
-        setClientSecret(paymentData.clientSecret);
-      }
-
-      addToast('Order created. Proceed to payment.', 'success');
-    } catch (error) {
-      addToast(error.response?.data?.message || 'Error creating order', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCODPayment = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const orderPayload = {
-        items: items.map((i) => ({
-          product: i._id,
-          name: i.name,
-          price: i.price,
-          quantity: i.quantity,
-          image: i.images?.[0] || '',
-        })),
-        shippingAddress: form,
-        paymentMethod: 'cod',
-        subtotal,
-        shipping,
-        total,
-      };
-
-      const { data: orderData } = await api.post('/orders', orderPayload);
+      const { data } = await api.post('/orders', payload);
       clearCart();
-      addToast('Order placed successfully! (COD)', 'success');
-      navigate(`/track/${orderData._id}`);
-    } catch (error) {
-      addToast(error.response?.data?.message || 'Error placing order', 'error');
+      addToast(method === 'cod' ? 'Order placed successfully! (COD)' : 'Payment successful. Order placed!', 'success');
+      navigate(`/track/${data._id}`);
+    } catch {
+      const localOrder = saveLocalOrder(payload, paymentStatus);
+      clearCart();
+      addToast(method === 'cod' ? 'Order placed locally (offline mode)' : 'Demo payment completed. Order placed locally.', 'info');
+      navigate(`/track/${localOrder._id}`);
     } finally {
       setLoading(false);
     }
@@ -139,9 +120,7 @@ const Checkout = () => {
 
   const handlePayment = async (e) => {
     e.preventDefault();
-    if (payment === 'cod') {
-      handleCODPayment(e);
-    }
+    await placeOrder(payment);
   };
 
   return (
@@ -165,7 +144,9 @@ const Checkout = () => {
                 <Input label="State" name="state" value={form.state} onChange={handleChange} />
                 <Input label="Pincode" name="pincode" value={form.pincode} onChange={handleChange} error={errors.pincode} required />
               </div>
-              <Button type="submit" variant="secondary" className="w-full" size="lg">Continue to Payment</Button>
+              <Button type="submit" variant="secondary" className="w-full" size="lg">
+                Continue to Payment
+              </Button>
             </form>
           )}
 
@@ -186,7 +167,7 @@ const Checkout = () => {
                       name="payment"
                       value={id}
                       checked={payment === id}
-                      onChange={() => handlePaymentMethod(id)}
+                      onChange={() => setPayment(id)}
                       className="sr-only"
                       disabled={loading}
                     />
@@ -200,33 +181,22 @@ const Checkout = () => {
                 ))}
               </div>
 
-              {payment === 'card' && clientSecret && (
+              {payment !== 'cod' && (
                 <div className="border-t border-coconut/20 dark:border-cream/20 pt-6 pb-6">
-                  <h3 className="font-semibold mb-3">Card Details</h3>
+                  <h3 className="font-semibold mb-3">{payment === 'upi' ? 'UPI Confirmation' : 'Card Confirmation'}</h3>
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
-                    <p className="font-semibold mb-2">✓ Order Created Successfully</p>
-                    <p className="text-xs">Order ID: {orderId}</p>
-                    <p className="text-xs mt-2">Amount: ₹{total}</p>
-                    <p className="text-xs mt-3 font-semibold">Complete payment flow activated (see console for clientSecret)</p>
+                    <p className="font-semibold mb-2">Demo payment mode</p>
+                    <p className="text-xs">Amount: ₹{total}</p>
+                    <p className="text-xs mt-2">Click the button below to mark payment successful and place the order.</p>
                   </div>
                 </div>
               )}
 
               <div className="flex gap-3 pt-4 border-t border-coconut/20 dark:border-cream/20">
                 <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
-                {payment === 'cod' ? (
-                  <Button type="submit" variant="secondary" className="flex-1" size="lg" loading={loading}>
-                    Place Order (COD)
-                  </Button>
-                ) : payment === 'card' ? (
-                  <Button variant="secondary" className="flex-1" size="lg" disabled={!clientSecret} loading={!clientSecret}>
-                    {clientSecret ? 'Proceed to Payment' : 'Preparing...'}
-                  </Button>
-                ) : (
-                  <Button variant="secondary" className="flex-1" size="lg" disabled>
-                    Coming Soon
-                  </Button>
-                )}
+                <Button type="submit" variant="secondary" className="flex-1" size="lg" loading={loading}>
+                  {payment === 'cod' ? 'Place Order (COD)' : 'Pay & Place Order'}
+                </Button>
               </div>
             </form>
           )}
