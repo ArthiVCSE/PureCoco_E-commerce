@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import Button from '../ui/Button';
 import { AlertCircle } from 'lucide-react';
 
-const StripePaymentForm = ({ orderId, onSuccess, onError, loading }) => {
+const StripePaymentForm = ({ clientSecret, onSuccess, onError, loading }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState(null);
@@ -12,16 +12,15 @@ const StripePaymentForm = ({ orderId, onSuccess, onError, loading }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !clientSecret) return;
     setIsProcessing(true);
     setError(null);
 
     try {
       const cardElement = elements.getElement(CardElement);
 
-      // Confirm payment with Stripe
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret, // this comes from order response
+        clientSecret,
         {
           payment_method: {
             card: cardElement,
@@ -78,7 +77,7 @@ const StripePaymentForm = ({ orderId, onSuccess, onError, loading }) => {
         className="w-full"
         size="lg"
         loading={isProcessing || loading}
-        disabled={!stripe || isProcessing || loading}
+        disabled={!stripe || !clientSecret || isProcessing || loading}
       >
         Complete Payment
       </Button>

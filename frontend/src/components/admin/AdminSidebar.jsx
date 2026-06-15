@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingCart, Users, FileText, Settings, LogOut, BarChart3, X,
+  Star, Mail, Bell, ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../utils/formatCurrency';
@@ -10,6 +11,9 @@ const links = [
   { label: 'Products', path: '/admin/products', icon: Package },
   { label: 'Orders', path: '/admin/orders', icon: ShoppingCart },
   { label: 'Customers', path: '/admin/customers', icon: Users },
+  { label: 'Reviews', path: '/admin/reviews', icon: Star },
+  { label: 'Messages', path: '/admin/messages', icon: Mail },
+  { label: 'Notifications', path: '/admin/notifications', icon: Bell },
   { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
   { label: 'Blog', path: '/admin/blog', icon: FileText },
   { label: 'Settings', path: '/admin/settings', icon: Settings },
@@ -62,6 +66,14 @@ const AdminSidebar = ({ onClose }) => {
       </nav>
 
       <div className="p-4 border-t border-cream/10">
+        <Link
+          to="/dashboard"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans font-medium text-cream/80 hover:bg-gold/20 hover:text-cream transition-colors mb-2 justify-center"
+          title="Go to User Dashboard"
+        >
+          <ExternalLink size={16} />
+          <span>User Dashboard</span>
+        </Link>
         <button
           onClick={() => { logout(); onClose?.(); }}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans font-medium text-cream/70 hover:bg-red-500/20 hover:text-red-300 transition-colors"

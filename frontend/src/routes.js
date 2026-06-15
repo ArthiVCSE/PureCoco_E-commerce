@@ -15,6 +15,9 @@ const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 const AdminBlog = lazy(() => import('./pages/admin/AdminBlog'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'));
+const AdminMessages = lazy(() => import('./pages/admin/AdminMessages'));
+const AdminNotifications = lazy(() => import('./pages/admin/AdminNotifications'));
 const OrderTracking = lazy(() => import('./pages/OrderTracking'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogDetail = lazy(() => import('./pages/BlogDetail'));
@@ -39,6 +42,9 @@ export const routes = [
   { path: '/admin/analytics', element: AdminAnalytics, layout: 'admin' },
   { path: '/admin/blog', element: AdminBlog, layout: 'admin' },
   { path: '/admin/settings', element: AdminSettings, layout: 'admin' },
+  { path: '/admin/reviews', element: AdminReviews, layout: 'admin' },
+  { path: '/admin/messages', element: AdminMessages, layout: 'admin' },
+  { path: '/admin/notifications', element: AdminNotifications, layout: 'admin' },
   { path: '/track/:orderId', element: OrderTracking, layout: 'main' },
   { path: '/blog', element: Blog, layout: 'main' },
   { path: '/blog/:slug', element: BlogDetail, layout: 'main' },

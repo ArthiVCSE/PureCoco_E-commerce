@@ -1,20 +1,44 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react';
-import { Menu, X, ShoppingBag, User, Sun, Moon, Search } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, Sun, Moon, Search, ShieldCheck, Bell } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { ThemeContext } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { NAV_LINKS, APP_NAME } from '../../utils/constants';
 import { cn } from '../../utils/formatCurrency';
+import notificationService from '../../services/notificationService';
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const { itemCount, setIsOpen } = useCart();
   const { darkMode, toggleTheme } = useContext(ThemeContext);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAdmin } = useAuth();
   const location = useLocation();
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?._id) {
+      setNotifications([]);
+      return;
+    }
+    notificationService.getUserNotifications(user._id)
+      .then((data) => setNotifications(Array.isArray(data) ? data.slice(0, 8) : []))
+      .catch(() => setNotifications([]));
+  }, [isAuthenticated, user?._id, location.pathname]);
+
+  const unreadCount = notifications.filter((item) => !item.isRead).length;
+
+  const markNotificationRead = async (id) => {
+    setNotifications((items) => items.map((item) => item._id === id ? { ...item, isRead: true } : item));
+    try {
+      await notificationService.markAsRead(id);
+    } catch {
+      // Keep the optimistic UI state; the next reload will sync from the API.
+    }
+  };
 
   const linkClass = (path) =>
     cn(
@@ -72,12 +96,55 @@ const Navbar = () => {
             )}
           </button>
 
+          {isAuthenticated && (
+            <div className="relative">
+              <button
+                onClick={() => setNotificationsOpen((open) => !open)}
+                className={cn(iconClass, 'relative')}
+                aria-label={`Notifications, ${unreadCount} unread`}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              {notificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-coconut/10 dark:border-cream/10 bg-white dark:bg-coconut-dark shadow-card overflow-hidden">
+                  <div className="px-4 py-3 border-b border-coconut/10 dark:border-cream/10">
+                    <p className="text-sm font-bold text-coconut dark:text-cream">Notifications</p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <p className="p-4 text-sm text-muted">No notifications yet</p>
+                    ) : notifications.map((item) => (
+                      <button
+                        key={item._id}
+                        onClick={() => markNotificationRead(item._id)}
+                        className="w-full text-left px-4 py-3 border-b border-coconut/5 dark:border-cream/5 hover:bg-coconut/5 dark:hover:bg-cream/5"
+                      >
+                        <div className="flex items-start gap-2">
+                          {!item.isRead && <span className="mt-1.5 w-2 h-2 rounded-full bg-gold shrink-0" />}
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-coconut dark:text-cream truncate">{item.title}</p>
+                            <p className="text-xs text-muted line-clamp-2">{item.message}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <Link
-            to={isAuthenticated ? '/dashboard' : '/login'}
+            to={isAuthenticated ? (isAdmin ? '/admin' : '/dashboard') : '/login'}
             className={cn(iconClass, 'hidden sm:flex')}
-            aria-label={isAuthenticated ? 'Dashboard' : 'Login'}
+            aria-label={isAuthenticated ? (isAdmin ? 'Admin panel' : 'Dashboard') : 'Login'}
           >
-            <User size={20} />
+            {isAdmin ? <ShieldCheck size={20} /> : <User size={20} />}
           </Link>
 
           <button
@@ -111,12 +178,22 @@ const Navbar = () => {
             ))}
             <li>
               <Link
-                to={isAuthenticated ? '/dashboard' : '/login'}
+                to={isAuthenticated ? (isAdmin ? '/admin' : '/dashboard') : '/login'}
                 className="block px-4 py-3 rounded-lg text-sm font-sans font-semibold text-coconut dark:text-cream hover:bg-coconut/8 dark:hover:bg-cream/8"
               >
-                {isAuthenticated ? `Hi, ${user?.name?.split(' ')[0]}` : 'Login / Register'}
+                {isAuthenticated ? (isAdmin ? 'Admin Panel' : `Hi, ${user?.name?.split(' ')[0]}`) : 'Login / Register'}
               </Link>
             </li>
+            {isAuthenticated && isAdmin && (
+              <li>
+                <Link
+                  to="/dashboard"
+                  className="block px-4 py-3 rounded-lg text-sm font-sans font-semibold text-coconut dark:text-cream hover:bg-coconut/8 dark:hover:bg-cream/8"
+                >
+                  User Dashboard
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       )}

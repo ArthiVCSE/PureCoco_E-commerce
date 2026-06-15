@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Package, Heart, Settings, LogOut, Trash2, Edit2, Save, X, ShoppingBag, Navigation } from 'lucide-react';
+import { Package, Heart, Settings, LogOut, Edit2, Save, X, ShoppingBag, Navigation, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import OrderTable from '../components/dashboard/OrderTable';
 import StatCard from '../components/dashboard/StatCard';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
-import { formatCurrency, formatDate } from '../utils/formatCurrency';
-import { MOCK_PRODUCTS } from '../services/productService';
+import { formatCurrency } from '../utils/formatCurrency';
 import api from '../services/api';
 import wishlistService from '../services/wishlistService';
 import { useToast } from '../components/common/Toast';
 
 const Dashboard = () => {
-  const { user, isAuthenticated, logout, register } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const [orders, setOrders] = useState([]);
   const [wishlist, setWishlist] = useState(() => {
     try { return JSON.parse(localStorage.getItem('purecoco_wishlist') || '[]'); } catch { return []; }
@@ -93,7 +92,14 @@ const Dashboard = () => {
           </h1>
           <p className="text-muted font-sans mt-1">Manage your orders, wishlist, and account</p>
         </div>
-        <Button variant="ghost" icon={LogOut} onClick={logout} className="self-start sm:self-auto">Logout</Button>
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          {isAdmin && (
+            <Link to="/admin">
+              <Button variant="secondary" icon={ShieldCheck}>Admin Panel</Button>
+            </Link>
+          )}
+          <Button variant="ghost" icon={LogOut} onClick={logout}>Logout</Button>
+        </div>
       </div>
 
       {/* Stats */}

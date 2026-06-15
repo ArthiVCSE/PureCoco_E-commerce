@@ -11,6 +11,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { cn } from '../utils/formatCurrency';
 import api from '../services/api';
+import paymentService from '../services/paymentService';
 
 const paymentMethods = [
   { id: 'cod', label: 'Cash on Delivery', icon: Building2, desc: 'Pay when you receive the package' },
@@ -98,6 +99,12 @@ const Checkout = () => {
     return order;
   };
 
+  const completeOrder = (order, message, type = 'success') => {
+    clearCart();
+    addToast(message, type);
+    navigate(`/track/${order._id}`);
+  };
+
   const placeOrder = async (method) => {
     setLoading(true);
     const payload = buildOrderPayload(method);
@@ -105,14 +112,15 @@ const Checkout = () => {
 
     try {
       const { data } = await api.post('/orders', payload);
-      clearCart();
-      addToast(method === 'cod' ? 'Order placed successfully! (COD)' : 'Payment successful. Order placed!', 'success');
-      navigate(`/track/${data._id}`);
+      if (method === 'cod') {
+        completeOrder(data, 'Order placed successfully! (COD)');
+      } else {
+        const paidOrder = await paymentService.completeDemoPayment(data._id);
+        completeOrder(paidOrder, 'Demo payment completed. Order placed!', 'info');
+      }
     } catch {
       const localOrder = saveLocalOrder(payload, paymentStatus);
-      clearCart();
-      addToast(method === 'cod' ? 'Order placed locally (offline mode)' : 'Demo payment completed. Order placed locally.', 'info');
-      navigate(`/track/${localOrder._id}`);
+      completeOrder(localOrder, method === 'cod' ? 'Order placed locally (offline mode)' : 'Demo payment completed. Order placed locally.', 'info');
     } finally {
       setLoading(false);
     }
@@ -151,7 +159,7 @@ const Checkout = () => {
           )}
 
           {step === 2 && (
-            <form onSubmit={handlePayment} className="space-y-4 p-6 rounded-xl bg-white dark:bg-coconut-light/10 shadow-soft">
+            <div className="space-y-4 p-6 rounded-xl bg-white dark:bg-coconut-light/10 shadow-soft">
               <h2 className="font-display text-xl font-semibold mb-4">Payment Method</h2>
               <div className="space-y-3 mb-6">
                 {paymentMethods.map(({ id, label, icon: Icon, desc }) => (
@@ -194,11 +202,11 @@ const Checkout = () => {
 
               <div className="flex gap-3 pt-4 border-t border-coconut/20 dark:border-cream/20">
                 <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
-                <Button type="submit" variant="secondary" className="flex-1" size="lg" loading={loading}>
+                <Button type="button" onClick={handlePayment} variant="secondary" className="flex-1" size="lg" loading={loading}>
                   {payment === 'cod' ? 'Place Order (COD)' : 'Pay & Place Order'}
                 </Button>
               </div>
-            </form>
+            </div>
           )}
         </div>
 

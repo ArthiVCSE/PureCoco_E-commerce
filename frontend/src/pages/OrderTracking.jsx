@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Package, Truck, CheckCircle, MapPin, Clock, Navigation,
-  User, Phone, Check, AlertCircle, Map, RefreshCw, Star
+  Phone, Check, AlertCircle, Map, Star
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/formatCurrency';
 import Badge from '../components/ui/Badge';
@@ -85,7 +85,10 @@ const OrderTracking = () => {
     }
   }, []);
 
-  useEffect(() => { loadOrder(); }, [orderId]);
+  useEffect(() => {
+    loadOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   // Animate map progress for out-for-delivery
   useEffect(() => {
@@ -168,6 +171,7 @@ const OrderTracking = () => {
         mapInstanceRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showMapView]);
 
   // Update truck position on the Leaflet map as mapProgress changes

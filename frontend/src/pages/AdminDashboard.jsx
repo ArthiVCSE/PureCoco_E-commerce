@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DollarSign, ShoppingCart, Users, TrendingUp, Package, ArrowRight, Eye } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, TrendingUp, Package, ArrowRight, Eye, Star, Mail, Bell } from 'lucide-react';
 import AdminLayout from '../components/admin/AdminLayout';
 import StatCard from '../components/dashboard/StatCard';
 import DataTable from '../components/admin/DataTable';
@@ -15,25 +15,35 @@ const statusVariant = {
 };
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({ products: 0, orders: 0, users: 0, revenue: 0 });
+  const [stats, setStats] = useState({ products: 0, orders: 0, users: 0, revenue: 0, reviews: 0, unreadMessages: 0, unreadNotifications: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [ordersRes, productsRes] = await Promise.allSettled([
+        const [ordersRes, productsRes, usersRes, reviewsRes, messagesRes, notificationsRes] = await Promise.allSettled([
           api.get('/orders'),
           api.get('/products'),
+          api.get('/users'),
+          api.get('/reviews'),
+          api.get('/messages'),
+          api.get('/notifications'),
         ]);
         const orders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data || []) : [];
         const products = productsRes.status === 'fulfilled' ? (productsRes.value.data?.products || []) : [];
+        const users = usersRes.status === 'fulfilled' ? (usersRes.value.data || []) : [];
+        const reviews = reviewsRes.status === 'fulfilled' ? (reviewsRes.value.data || []) : [];
+        const messages = messagesRes.status === 'fulfilled' ? (messagesRes.value.data || []) : [];
+        const notifications = notificationsRes.status === 'fulfilled' ? (notificationsRes.value.data || []) : [];
         setStats({
           products: products.length || 6,
           orders: orders.length,
-          users: 0,
+          users: users.length,
           revenue: orders.reduce((s, o) => s + (o.total || 0), 0),
+          reviews: reviews.length,
+          unreadMessages: messages.filter(m => !m.isRead).length,
+          unreadNotifications: notifications.filter(n => !n.isRead).length,
         });
         setRecentOrders(orders.slice(0, 6).map(o => ({
           id: o._id,
@@ -44,16 +54,27 @@ const AdminDashboard = () => {
           status: o.status,
           createdAt: o.createdAt,
         })));
+        const productSales = new Map();
+        orders.forEach(order => {
+          order.items?.forEach(item => {
+            const key = item.product || item.name;
+            const current = productSales.get(key) || { name: item.name, sales: 0, revenue: 0 };
+            current.sales += item.quantity || 0;
+            current.revenue += (item.price || 0) * (item.quantity || 0);
+            productSales.set(key, current);
+          });
+        });
+        const top = Array.from(productSales.values()).sort((a, b) => b.sales - a.sales).slice(0, 5);
+        const maxSales = top[0]?.sales || 1;
+        setTopProducts(top.map(item => ({ ...item, pct: Math.max(8, Math.round((item.sales / maxSales) * 100)) })));
       } catch {
         const local = JSON.parse(localStorage.getItem('purecoco_orders') || '[]');
-        setStats({ products: 0, orders: local.length, users: 0, revenue: local.reduce((s, o) => s + (o.total || 0), 0) });
+        setStats({ products: 0, orders: local.length, users: 0, revenue: local.reduce((s, o) => s + (o.total || 0), 0), reviews: 0, unreadMessages: 0, unreadNotifications: 0 });
         setRecentOrders(local.slice(0, 6).map(o => ({
           id: o._id, _id: o._id, orderId: `#${o._id.slice(-6).toUpperCase()}`,
           customer: o.shippingAddress?.fullName || o.shipping?.fullName || 'Guest',
           total: o.total, status: o.status, createdAt: o.createdAt,
         })));
-      } finally {
-        setLoading(false);
       }
     };
     load();
@@ -83,6 +104,12 @@ const AdminDashboard = () => {
         <StatCard title="Total Orders" value={stats.orders} change="+8.2%" icon={ShoppingCart} />
         <StatCard title="Customers" value={stats.users} change="+5.1%" icon={Users} />
         <StatCard title="Products" value={stats.products} icon={Package} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <Link to="/admin/reviews"><StatCard title="Reviews" value={stats.reviews} icon={Star} /></Link>
+        <Link to="/admin/messages"><StatCard title="Unread Messages" value={stats.unreadMessages} icon={Mail} /></Link>
+        <Link to="/admin/notifications"><StatCard title="Unread Notifications" value={stats.unreadNotifications} icon={Bell} /></Link>
       </div>
 
       {/* Charts Row */}
@@ -189,6 +216,8 @@ const AdminDashboard = () => {
         <div className="flex flex-wrap gap-3">
           <Link to="/admin/products"><Button variant="secondary" size="sm" icon={Package}>Add Product</Button></Link>
           <Link to="/admin/orders"><Button variant="outline" size="sm" icon={ShoppingCart}>View Orders</Button></Link>
+          <Link to="/admin/messages"><Button variant="ghost" size="sm" icon={Mail}>Messages</Button></Link>
+          <Link to="/admin/notifications"><Button variant="ghost" size="sm" icon={Bell}>Notifications</Button></Link>
           <Link to="/admin/blog"><Button variant="ghost" size="sm">Write Blog Post</Button></Link>
           <Link to="/admin/analytics"><Button variant="ghost" size="sm" icon={TrendingUp}>Analytics</Button></Link>
         </div>

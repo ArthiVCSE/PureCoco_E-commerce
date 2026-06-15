@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Edit, Trash2, X, ChevronDown } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import DataTable from '../../components/admin/DataTable';
 import Badge from '../../components/ui/Badge';
@@ -18,6 +18,12 @@ const statusVariant = {
   'out-for-delivery': 'natural',
   delivered: 'success',
   cancelled: 'danger',
+};
+
+const paymentVariant = {
+  pending: 'warning',
+  paid: 'success',
+  failed: 'danger',
 };
 
 const defaultOrders = [
@@ -140,6 +146,16 @@ const AdminOrders = () => {
       </div>
     )},
     { key: 'total', label: 'Total', render: row => <span className="font-semibold">{formatCurrency(row.total)}</span> },
+    {
+      key: 'payment',
+      label: 'Payment',
+      render: row => (
+        <div>
+          <Badge variant={paymentVariant[row.paymentStatus] || 'default'}>{row.paymentStatus || 'pending'}</Badge>
+          <p className="text-[10px] text-muted mt-0.5 uppercase">{row.paymentMethod || 'cod'}</p>
+        </div>
+      )
+    },
     { key: 'date', label: 'Date', render: row => <span className="text-sm text-muted">{formatDate(row.createdAt)}</span> },
     { key: 'status', label: 'Status', render: row => <Badge variant={statusVariant[row.status] || 'default'}>{row.status}</Badge> },
     {
@@ -284,6 +300,11 @@ const AdminOrders = () => {
               <div className="p-3 bg-coconut/5 dark:bg-cream/5 rounded-lg">
                 <span className="text-muted text-xs block mb-1">Status</span>
                 <Badge variant={statusVariant[selectedOrder.status] || 'default'}>{selectedOrder.status}</Badge>
+              </div>
+              <div className="p-3 bg-coconut/5 dark:bg-cream/5 rounded-lg">
+                <span className="text-muted text-xs block mb-1">Payment</span>
+                <Badge variant={paymentVariant[selectedOrder.paymentStatus] || 'default'}>{selectedOrder.paymentStatus || 'pending'}</Badge>
+                <p className="text-[10px] text-muted mt-1 uppercase">{selectedOrder.paymentMethod || 'cod'}</p>
               </div>
               <div className="p-3 bg-coconut/5 dark:bg-cream/5 rounded-lg">
                 <span className="text-muted text-xs block mb-1">Customer</span>

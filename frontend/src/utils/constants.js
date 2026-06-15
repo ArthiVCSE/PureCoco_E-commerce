@@ -10,6 +10,7 @@ export const COLORS = {
 };
 
 export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+export const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || '';
 
 export const ROUTES = {
   HOME: '/',

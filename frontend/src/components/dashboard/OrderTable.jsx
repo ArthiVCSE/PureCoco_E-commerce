@@ -11,6 +11,12 @@ const statusColors = {
   cancelled: 'danger',
 };
 
+const paymentColors = {
+  pending: 'warning',
+  paid: 'success',
+  failed: 'danger',
+};
+
 const OrderTable = ({ orders }) => {
   if (!orders?.length) {
     return (
@@ -29,6 +35,7 @@ const OrderTable = ({ orders }) => {
             <th className="text-left p-4 font-semibold text-coconut/80 dark:text-cream/80">Date</th>
             <th className="text-left p-4 font-semibold text-coconut/80 dark:text-cream/80">Items</th>
             <th className="text-left p-4 font-semibold text-coconut/80 dark:text-cream/80">Total</th>
+            <th className="text-left p-4 font-semibold text-coconut/80 dark:text-cream/80">Payment</th>
             <th className="text-left p-4 font-semibold text-coconut/80 dark:text-cream/80">Status</th>
             <th className="text-left p-4 font-semibold text-coconut/80 dark:text-cream/80">Action</th>
           </tr>
@@ -40,6 +47,14 @@ const OrderTable = ({ orders }) => {
               <td className="p-4">{formatDate(order.createdAt)}</td>
               <td className="p-4">{order.items?.length || 0} items</td>
               <td className="p-4 font-medium">{formatCurrency(order.total)}</td>
+              <td className="p-4">
+                <div className="flex flex-col gap-1">
+                  <Badge variant={paymentColors[order.paymentStatus] || 'default'}>
+                    {order.paymentStatus || 'pending'}
+                  </Badge>
+                  <span className="text-xs text-coconut/50 dark:text-cream/50 uppercase">{order.paymentMethod || 'cod'}</span>
+                </div>
+              </td>
               <td className="p-4">
                 <Badge variant={statusColors[order.status] || 'default'}>
                   {order.status}
