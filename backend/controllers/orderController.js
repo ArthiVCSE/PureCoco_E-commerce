@@ -68,11 +68,11 @@ exports.createOrder = async (req, res) => {
       sendEmail: false,
     });
 
-    await sendEmail({
+    sendEmail({
       to: shippingAddress.email,
       subject: `PureCoco Order Confirmation #${order._id.toString().slice(-6)}`,
       html: `<h2>Thank you for your order!</h2><p>Order total: INR ${totals.total}</p><p>Track your order at purecoco.in/track/${order._id}</p>`,
-    });
+    }).catch(console.error);
 
     res.status(201).json(order);
   } catch (error) {

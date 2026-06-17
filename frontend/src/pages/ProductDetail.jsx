@@ -102,9 +102,13 @@ const ProductDetail = () => {
       });
       setReviews((prev) => [data, ...prev]);
       addToast('Review submitted successfully', 'success');
-    } catch {
-      setReviews((prev) => [localReview, ...prev]);
-      addToast('Review saved locally for demo mode', 'info');
+    } catch (error) {
+      if (error.response?.data?.message) {
+        addToast(error.response.data.message, 'error');
+      } else {
+        setReviews((prev) => [localReview, ...prev]);
+        addToast('Review saved locally for demo mode', 'info');
+      }
     } finally {
       setReviewText('');
       setReviewRating(5);

@@ -59,13 +59,17 @@ const Home = () => {
     <div className="animate-fade-in font-sans">
       {/* Hero — natural full background */}
       <section className="relative min-h-[88vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0">
+          <div className="absolute inset-0">
           <img
             src={IMAGES.hero}
+
             alt="Natural coconut background"
             className="w-full h-full object-cover object-center scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-coconut/90 via-coconut/60 to-coconut/20" />
+          {/* Removed dark/brown hero shade overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-coconut/20 via-coconut/10 to-transparent" />
+
+
         </div>
         <div className="container-main relative z-10 py-20">
           <Badge variant="gold" className="mb-4">From Pollachi Farms</Badge>

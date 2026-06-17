@@ -1,5 +1,7 @@
-import { Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Suspense, useEffect } from 'react';
+
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -28,15 +30,37 @@ const PageLayout = ({ layout, children }) => {
   return <MainLayout>{children}</MainLayout>;
 };
 
+const ScrollToTop = () => {
+  const location = useLocation();
+
+  // scroll to top on route change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [location.pathname]);
+
+
+  return null;
+};
+
+
+
+
 function App() {
+
   return (
     <BrowserRouter>
+
       <ThemeProvider>
         <AuthProvider>
           <CartProvider>
             <ToastProvider>
               <Suspense fallback={<PageLoader />}>
+                <ScrollToTop />
                 <Routes>
+
                   {routes.map(({ path, element: Component, layout }) => (
                     <Route
                       key={path}

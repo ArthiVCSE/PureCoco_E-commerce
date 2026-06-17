@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { CreditCard, Smartphone, Building2, Loader } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
@@ -11,13 +11,22 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { cn } from '../utils/formatCurrency';
 import api from '../services/api';
-import paymentService from '../services/paymentService';
+import { paymentService } from '../services/paymentService';
 
 const paymentMethods = [
   { id: 'cod', label: 'Cash on Delivery', icon: Building2, desc: 'Pay when you receive the package' },
-  { id: 'card', label: 'Credit/Debit Card', icon: CreditCard, desc: 'Demo card payment confirmation' },
-  { id: 'upi', label: 'UPI', icon: Smartphone, desc: 'Demo UPI confirmation' },
+  { id: 'card', label: 'Online Payment (Razorpay)', icon: CreditCard, desc: 'Pay securely via Credit/Debit/UPI' },
 ];
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const Checkout = () => {
   const { items, total, subtotal, shipping, clearCart } = useCart();
@@ -26,6 +35,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+
   const [payment, setPayment] = useState('cod');
   const [form, setForm] = useState({
     fullName: '',
@@ -81,54 +91,91 @@ const Checkout = () => {
     total,
   });
 
-  const saveLocalOrder = (payload, paymentStatus) => {
-    const order = {
-      ...payload,
-      _id: `LOCAL${Date.now()}`,
-      status: 'processing',
-      paymentStatus,
-      createdAt: new Date().toISOString(),
-      tracking: {
-        carrier: 'PureCoco Delivery',
-        trackingId: `PC${Date.now()}`,
-        estimatedDelivery: new Date(Date.now() + 5 * 86400000).toISOString(),
-      },
-    };
-    const stored = JSON.parse(localStorage.getItem('purecoco_orders') || '[]');
-    localStorage.setItem('purecoco_orders', JSON.stringify([order, ...stored]));
-    return order;
-  };
-
   const completeOrder = (order, message, type = 'success') => {
     clearCart();
     addToast(message, type);
     navigate(`/track/${order._id}`);
   };
 
-  const placeOrder = async (method) => {
-    setLoading(true);
-    const payload = buildOrderPayload(method);
-    const paymentStatus = method === 'cod' ? 'pending' : 'paid';
-
-    try {
-      const { data } = await api.post('/orders', payload);
-      if (method === 'cod') {
-        completeOrder(data, 'Order placed successfully! (COD)');
-      } else {
-        const paidOrder = await paymentService.completeDemoPayment(data._id);
-        completeOrder(paidOrder, 'Demo payment completed. Order placed!', 'info');
-      }
-    } catch {
-      const localOrder = saveLocalOrder(payload, paymentStatus);
-      completeOrder(localOrder, method === 'cod' ? 'Order placed locally (offline mode)' : 'Demo payment completed. Order placed locally.', 'info');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePayment = async (e) => {
     e.preventDefault();
-    await placeOrder(payment);
+    setLoading(true);
+
+    const payload = buildOrderPayload(payment);
+
+    try {
+      // 1. Create order in backend
+      const { data: orderData } = await api.post('/orders', payload);
+
+      if (payment === 'cod') {
+        completeOrder(orderData, 'Order placed successfully! (COD)');
+        return;
+      }
+
+      if (payment === 'card') {
+        // 2. Load Razorpay script
+        const isLoaded = await loadRazorpayScript();
+        if (!isLoaded) {
+          addToast('Failed to load Razorpay SDK. Please check your connection.', 'error');
+          setLoading(false);
+          return;
+        }
+
+        // 3. Create Razorpay order
+        const rzpOrder = await paymentService.createRazorpayOrder(orderData._id);
+
+        if (!rzpOrder || !rzpOrder.id) {
+          addToast('Razorpay is not configured on the server. Falling back to local offline mode.', 'info');
+          const paidOrder = await paymentService.completeDemoPayment(orderData._id);
+          completeOrder(paidOrder, 'Demo payment completed. Order placed!', 'info');
+          return;
+        }
+
+        // 4. Initialize Razorpay Checkout
+        const rzpKey = process.env.REACT_APP_RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
+        
+        const options = {
+          key: rzpKey,
+          amount: rzpOrder.amount,
+          currency: 'INR',
+          name: 'PureCoco',
+          description: 'Premium Cold-Pressed Coconut Oil',
+          order_id: rzpOrder.id,
+          handler: async function (response) {
+            try {
+              // 5. Verify Signature
+              await paymentService.verifyRazorpayPayment({
+                orderId: orderData._id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              completeOrder(orderData, 'Payment successful! Order placed.', 'success');
+            } catch (err) {
+              addToast('Payment verification failed on the server', 'error');
+            }
+          },
+          prefill: {
+            name: form.fullName,
+            email: form.email,
+            contact: form.phone,
+          },
+          theme: {
+            color: '#D4AF37',
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          addToast(response.error.description || 'Payment failed', 'error');
+        });
+        rzp.open();
+        setLoading(false);
+      }
+    } catch (err) {
+      addToast(err?.message || err?.response?.data?.message || 'Payment failed', 'error');
+      setLoading(false);
+    }
   };
 
   return (
@@ -184,26 +231,21 @@ const Checkout = () => {
                       <p className="font-medium">{label}</p>
                       <p className="text-xs text-coconut/50">{desc}</p>
                     </div>
-                    {loading && payment === id && <Loader size={20} className="ml-auto animate-spin text-gold" />}
                   </label>
                 ))}
               </div>
 
-              {payment !== 'cod' && (
-                <div className="border-t border-coconut/20 dark:border-cream/20 pt-6 pb-6">
-                  <h3 className="font-semibold mb-3">{payment === 'upi' ? 'UPI Confirmation' : 'Card Confirmation'}</h3>
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
-                    <p className="font-semibold mb-2">Demo payment mode</p>
-                    <p className="text-xs">Amount: ₹{total}</p>
-                    <p className="text-xs mt-2">Click the button below to mark payment successful and place the order.</p>
-                  </div>
-                </div>
-              )}
-
               <div className="flex gap-3 pt-4 border-t border-coconut/20 dark:border-cream/20">
-                <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
-                <Button type="button" onClick={handlePayment} variant="secondary" className="flex-1" size="lg" loading={loading}>
-                  {payment === 'cod' ? 'Place Order (COD)' : 'Pay & Place Order'}
+                <Button type="button" variant="outline" onClick={() => setStep(1)} disabled={loading}>Back</Button>
+                <Button
+                  type="button"
+                  onClick={handlePayment}
+                  variant="secondary"
+                  className="flex-1"
+                  size="lg"
+                  loading={loading}
+                >
+                  {payment === 'cod' ? 'Place Order (COD)' : 'Proceed to Razorpay'}
                 </Button>
               </div>
             </div>

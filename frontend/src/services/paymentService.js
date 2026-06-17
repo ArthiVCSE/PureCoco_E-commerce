@@ -1,8 +1,13 @@
 import api from './api';
 
 export const paymentService = {
-  createPaymentIntent: async (orderId) => {
-    const response = await api.post('/payments/create-payment-intent', { orderId });
+  createRazorpayOrder: async (orderId) => {
+    const response = await api.post('/payments/create-razorpay-order', { orderId });
+    return response.data;
+  },
+
+  verifyRazorpayPayment: async (verificationData) => {
+    const response = await api.post('/payments/verify-payment', verificationData);
     return response.data;
   },
 

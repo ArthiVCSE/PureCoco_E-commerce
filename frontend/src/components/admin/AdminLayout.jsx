@@ -26,7 +26,7 @@ const AdminLayout = ({ children, title, subtitle }) => {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed top-0 left-0 h-full z-50 transition-transform duration-300 lg:static lg:translate-x-0 lg:z-auto',
+          'fixed top-0 left-0 h-full z-50 transition-transform duration-300 lg:static lg:translate-x-0 lg:z-auto lg:h-screen lg:sticky lg:top-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >

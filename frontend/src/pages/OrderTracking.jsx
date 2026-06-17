@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -61,6 +62,8 @@ const OrderTracking = () => {
   const [currentStreet, setCurrentStreet] = useState(STREETS[0]);
   const [showMapView, setShowMapView] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isPolling, setIsPolling] = useState(false);
+
   const [loadError, setLoadError] = useState('');
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -86,9 +89,24 @@ const OrderTracking = () => {
   }, []);
 
   useEffect(() => {
+    setIsPolling(true);
     loadOrder();
+
+    // Real-time-ish update: poll order until paymentStatus changes or order completes.
+    // This makes card payment feel realtime without requiring websockets.
+    const interval = setInterval(() => {
+      if (!orderId) return;
+      setLoadError('');
+      loadOrder();
+    }, 2500);
+
+    return () => {
+      setIsPolling(false);
+      clearInterval(interval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
+
 
   // Animate map progress for out-for-delivery
   useEffect(() => {
@@ -183,15 +201,14 @@ const OrderTracking = () => {
   }, [mapProgress]);
 
   const loadOrder = async () => {
-    setLoading(true);
-    setLoadError('');
-
     try {
       const { data } = await api.get(`/orders/${orderId}`);
       setOrder(data);
       if (data.deliveryAvailability) setAvailability(data.deliveryAvailability);
       if (data.deliveryNotes) setNotes(data.deliveryNotes);
     } catch {
+      // fallback to local offline storage
+
       const orders = JSON.parse(localStorage.getItem('purecoco_orders') || '[]');
       const found = orders.find(o => o._id === orderId);
       if (found) {
@@ -245,6 +262,8 @@ const OrderTracking = () => {
     );
   }
 
+
+
   if (!order && loadError) {
     return (
       <div className="container-main pt-32 text-center py-20">
@@ -261,6 +280,8 @@ const OrderTracking = () => {
   }
 
   const currentIndex = statusOrder.indexOf(order.status);
+  const orderedPaymentPaid = order.paymentStatus === 'paid';
+
   const isOutForDelivery = order.status === 'out-for-delivery';
   const distLeft = Math.max(0.1, (3.4 - (mapProgress / 100) * 3.4)).toFixed(1);
   const minsLeft = Math.max(1, Math.round(15 - (mapProgress / 100) * 15));
@@ -278,7 +299,18 @@ const OrderTracking = () => {
         <p className="text-coconut/60 dark:text-cream/60 font-sans font-medium">
           Placed on {formatDate(order.createdAt)}
         </p>
+        {!orderedPaymentPaid && (
+          <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-coconut/10 border border-coconut/20 rounded-full text-coconut text-sm font-sans font-semibold animate-pulse">
+            <Check size={14} /> Waiting for payment confirmation…
+          </div>
+        )}
+        {orderedPaymentPaid && order.paymentStatus === 'failed' && (
+          <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-full text-red-700 dark:text-red-300 text-sm font-sans font-semibold">
+            <AlertCircle size={14} /> Payment failed. Please retry.
+          </div>
+        )}
         {isOutForDelivery && (
+
           <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gold/10 border border-gold/30 rounded-full text-gold text-sm font-sans font-semibold animate-pulse">
             <Navigation size={14} /> Your order is out for delivery right now!
           </div>

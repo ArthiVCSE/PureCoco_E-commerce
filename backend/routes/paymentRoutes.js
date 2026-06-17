@@ -1,12 +1,11 @@
 const express = require('express');
-const { createPaymentIntent, completeDemoPayment, handleWebhook } = require('../controllers/paymentController');
+const { createRazorpayOrder, completeDemoPayment, verifyRazorpayPayment } = require('../controllers/paymentController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/create-payment-intent', protect, createPaymentIntent);
+router.post('/create-razorpay-order', protect, createRazorpayOrder);
+router.post('/verify-payment', protect, verifyRazorpayPayment);
 router.post('/demo-complete', protect, completeDemoPayment);
-// Webhook handler (raw body already parsed in server.js)
-router.post('/webhook', handleWebhook);
 
 module.exports = router;

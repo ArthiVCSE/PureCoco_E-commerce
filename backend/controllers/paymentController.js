@@ -1,21 +1,25 @@
 const Order = require('../models/Order');
 const { sendEmail } = require('../utils/sendEmail');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
 
-const getStripe = () => {
-  if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_stripe_key_here')) return null;
+const getRazorpay = () => {
+  if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('your_key_here')) return null;
   try {
-    const Stripe = require('stripe');
-    return Stripe(process.env.STRIPE_SECRET_KEY);
+    return new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
   } catch {
     return null;
   }
 };
 
-exports.createPaymentIntent = async (req, res) => {
+exports.createRazorpayOrder = async (req, res) => {
   try {
-    const stripe = getStripe();
-    if (!stripe) {
-      return res.status(503).json({ message: 'Stripe is not configured. Use demo payment mode.' });
+    const razorpay = getRazorpay();
+    if (!razorpay) {
+      return res.status(503).json({ message: 'Razorpay is not configured. Use demo payment mode.' });
     }
     const { orderId } = req.body;
     const order = await Order.findById(orderId);
@@ -27,25 +31,69 @@ exports.createPaymentIntent = async (req, res) => {
       return res.status(400).json({ message: 'Order is already paid' });
     }
 
-    const amount = Math.round((order.total || 0) * 100); // smallest currency unit
+    const amount = Math.round((order.total || 0) * 100); // paise
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const options = {
       amount,
-      currency: process.env.STRIPE_CURRENCY || 'inr',
-      metadata: { orderId: order._id.toString() },
-    });
+      currency: 'INR',
+      receipt: order._id.toString(),
+    };
 
-    res.json({ clientSecret: paymentIntent.client_secret });
+    const rzpOrder = await razorpay.orders.create(options);
+    res.json({ id: rzpOrder.id, amount: rzpOrder.amount });
   } catch (error) {
-    console.error('createPaymentIntent error', error);
+    console.error('createRazorpayOrder error', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.verifyRazorpayPayment = async (req, res) => {
+  try {
+    const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(503).json({ message: 'Razorpay secret not configured' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest('hex');
+
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (isAuthentic) {
+      order.paymentStatus = 'paid';
+      await order.save();
+
+      // Send email optionally
+      try {
+        await sendEmail({
+          to: order.shippingAddress.email,
+          subject: `Payment received — Order #${order._id.toString().slice(-6)}`,
+          html: `<p>We have received your payment of ₹${order.total}. Your order is being processed.</p>`,
+        });
+      } catch (e) {
+        console.error('Failed to send payment email', e);
+      }
+
+      return res.json({ success: true, order });
+    }
+
+    res.status(400).json({ message: 'Payment verification failed' });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.completeDemoPayment = async (req, res) => {
   try {
-    if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('your_stripe_key_here')) {
-      return res.status(400).json({ message: 'Demo payment is disabled when Stripe is configured' });
+    if (process.env.RAZORPAY_KEY_ID && !process.env.RAZORPAY_KEY_ID.includes('your_key_here')) {
+      return res.status(400).json({ message: 'Demo payment is disabled when Razorpay is configured' });
     }
 
     const { orderId } = req.body;
@@ -64,65 +112,4 @@ exports.completeDemoPayment = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-exports.handleWebhook = async (req, res) => {
-  const stripe = getStripe();
-  if (!stripe) {
-    return res.status(503).json({ message: 'Stripe is not configured' });
-  }
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-  try {
-    if (endpointSecret) {
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-    } else {
-      // if no webhook secret configured, parse directly (less secure)
-      event = req.body;
-    }
-  } catch (err) {
-    console.error('Webhook signature verification failed.', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  switch (event.type) {
-    case 'payment_intent.succeeded': {
-      const pi = event.data.object;
-      const orderId = pi.metadata && pi.metadata.orderId;
-      if (orderId) {
-        try {
-          const order = await Order.findByIdAndUpdate(orderId, { paymentStatus: 'paid' }, { new: true });
-          if (order) {
-            await sendEmail({
-              to: order.shippingAddress.email,
-              subject: `Payment received — Order #${order._id.toString().slice(-6)}`,
-              html: `<p>We have received your payment of ₹${order.total}. Your order is being processed.</p>`,
-            });
-          }
-        } catch (e) {
-          console.error('Error updating order after payment', e);
-        }
-      }
-      break;
-    }
-    case 'payment_intent.payment_failed': {
-      const pi = event.data.object;
-      const orderId = pi.metadata && pi.metadata.orderId;
-      if (orderId) {
-        try {
-          await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed' });
-        } catch (e) {
-          console.error('Error marking payment failed', e);
-        }
-      }
-      break;
-    }
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  res.json({ received: true });
 };

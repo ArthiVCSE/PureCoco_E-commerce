@@ -15,15 +15,22 @@ const AdminAnalytics = () => {
   });
 
   useEffect(() => {
+    let mounted = true;
     const load = async () => {
       try {
         const res = await api.get('/orders/analytics');
-        if (res.data && res.data.months) {
+        if (mounted && res.data && res.data.months) {
           setData(res.data);
         }
       } catch { /* use default mock */ }
     };
+    
     load();
+    const interval = setInterval(load, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const maxRevenue = Math.max(...data.revenueByMonth, 1);

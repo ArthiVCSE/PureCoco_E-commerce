@@ -7,6 +7,10 @@ const generateToken = (id) => {
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
+    if (!process.env.EMAIL_USER || process.env.EMAIL_USER.includes('your_email')) {
+      console.log('Email sending skipped (not configured):', subject);
+      return false;
+    }
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,

@@ -5,7 +5,7 @@ const Order = require('../models/Order');
 exports.createReview = async (req, res) => {
   try {
     const { productId, rating, text, images } = req.body;
-    
+
     // Check if user has purchased the product
     const hasOrdered = await Order.exists({
       user: req.user._id,
@@ -22,16 +22,18 @@ exports.createReview = async (req, res) => {
       isVerified: !!hasOrdered
     });
 
+    const populatedReview = await Review.findById(review._id).populate('user', 'name avatar');
+
     // Update product rating and review count
     const reviews = await Review.find({ product: productId });
     const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-    
+
     await Product.findByIdAndUpdate(productId, {
       rating: parseFloat(avgRating.toFixed(1)),
       reviewCount: reviews.length
     });
 
-    res.status(201).json(review);
+    res.status(201).json(populatedReview);
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({ message: 'You have already reviewed this product' });
@@ -67,7 +69,7 @@ exports.deleteReview = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ message: 'Review not found' });
-    
+
     if (review.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
@@ -78,8 +80,8 @@ exports.deleteReview = async (req, res) => {
     const productId = review.product;
     const reviews = await Review.find({ product: productId });
     const reviewCount = reviews.length;
-    const avgRating = reviewCount > 0 
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount 
+    const avgRating = reviewCount > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
       : 0;
 
     await Product.findByIdAndUpdate(productId, {
