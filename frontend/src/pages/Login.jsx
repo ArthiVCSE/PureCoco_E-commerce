@@ -51,7 +51,7 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 card shadow-card space-y-4">
           <Input label="Email" name="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} error={errors.email} icon={Mail} required />
           <div className="relative">
-            <Input label="Password" name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} error={errors.password} icon={Lock} required />
+            <Input label="Password" name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} error={errors.password} icon={Lock} required autoComplete="current-password" />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[38px] text-coconut/50 hover:text-coconut dark:text-cream/50 dark:hover:text-cream" aria-label={showPassword ? 'Hide password' : 'Show password'}>
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>

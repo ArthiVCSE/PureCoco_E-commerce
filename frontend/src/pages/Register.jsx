@@ -45,9 +45,14 @@ const Register = () => {
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-8 card shadow-card space-y-4">
           <Input label="Full Name" name="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} error={errors.name} icon={User} required />
-          <Input label="Email" name="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} error={errors.email} icon={Mail} required />
-          <Input label="Password" name="password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} error={errors.password} icon={Lock} required />
-          <Input label="Confirm Password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} error={errors.confirmPassword} icon={Lock} required />
+          <Input label="Email" name="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} error={errors.email} icon={Mail} required autoComplete="email" />
+          <div className="relative">
+            <Input label="Password" name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} error={errors.password} icon={Lock} required autoComplete="new-password" />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[38px] text-coconut/50 hover:text-coconut dark:text-cream/50 dark:hover:text-cream">
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          <Input label="Confirm Password" name="confirmPassword" type={showPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} error={errors.confirmPassword} icon={Lock} required autoComplete="new-password" />
           <Button type="submit" variant="secondary" className="w-full" size="lg" loading={loading}>Create Account</Button>
         </form>
 

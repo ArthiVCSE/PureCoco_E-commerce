@@ -9,7 +9,8 @@ export const COLORS = {
   natural: '#4F7942',
 };
 
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const envApiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = envApiUrl.endsWith('/api') ? envApiUrl : `${envApiUrl.replace(/\/$/, '')}/api`;
 export const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || '';
 
 export const ROUTES = {
