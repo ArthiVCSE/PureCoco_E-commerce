@@ -9,4 +9,4 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-api.post('/auth/register').catch(() => {});
+api.post('/auth/register').catch(() => { });
