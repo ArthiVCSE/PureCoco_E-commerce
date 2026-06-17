@@ -40,3 +40,11 @@ Thumbs.db
 # ── Uploads (user-generated content, not tracked) ─────────────────────────────
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# ── Frontend – explicit ignores ───────────────────────────────────────────────
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local

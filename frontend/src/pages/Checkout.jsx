@@ -1,18 +1,17 @@
-import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { CreditCard, Building2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Building2, CreditCard } from 'lucide-react';
+import { cn } from '../utils/formatCurrency';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/common/Toast';
+import api from '../services/api';
+import paymentService from '../services/paymentService';
 import { validateCheckoutForm } from '../utils/validators';
 import CheckoutSteps from '../components/checkout/CheckoutSteps';
 import OrderSummary from '../components/checkout/OrderSummary';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { cn } from '../utils/formatCurrency';
-import api from '../services/api';
-import { paymentService } from '../services/paymentService';
-
 const paymentMethods = [
   { id: 'cod', label: 'Cash on Delivery', icon: Building2, desc: 'Pay when you receive the package' },
   { id: 'card', label: 'Online Payment (Razorpay)', icon: CreditCard, desc: 'Pay securely via Credit/Debit/UPI' },

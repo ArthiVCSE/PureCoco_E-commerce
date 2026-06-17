@@ -70,6 +70,12 @@ const OrderTracking = () => {
   const truckMarkerRef = useRef(null);
   const { addToast } = useToast();
 
+  // Load order on mount / when orderId changes
+  useEffect(() => {
+    loadOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
+
   // Load Leaflet CSS + JS dynamically
   useEffect(() => {
     if (!document.getElementById('leaflet-css')) {
@@ -88,24 +94,7 @@ const OrderTracking = () => {
     }
   }, []);
 
-  useEffect(() => {
-    setIsPolling(true);
-    loadOrder();
 
-    // Real-time-ish update: poll order until paymentStatus changes or order completes.
-    // This makes card payment feel realtime without requiring websockets.
-    const interval = setInterval(() => {
-      if (!orderId) return;
-      setLoadError('');
-      loadOrder();
-    }, 2500);
-
-    return () => {
-      setIsPolling(false);
-      clearInterval(interval);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]);
 
 
   // Animate map progress for out-for-delivery

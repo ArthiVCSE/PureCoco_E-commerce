@@ -208,8 +208,8 @@ const AdminDashboard = () => {
             </Link>
           </div>
           <div className="p-5 card space-y-4">
-            {topProducts.length ? topProducts.map((item) => (
-              <div key={item.name}>
+            {topProducts.length ? topProducts.map((item, idx) => (
+              <div key={`${item.name}-${idx}`}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-sans font-semibold text-body truncate max-w-[130px]" title={item.name}>{item.name}</span>
                   <span className="text-xs text-muted font-sans shrink-0 ml-2">{item.sales} sold</span>

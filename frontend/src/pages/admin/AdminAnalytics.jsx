@@ -94,8 +94,8 @@ const AdminAnalytics = () => {
             { name: 'Extra Virgin Premium Oil', sales: 189, pct: 78 },
             { name: 'Ayurvedic Wellness Oil', sales: 142, pct: 65 },
             { name: 'Hair & Skin Care Oil', sales: 156, pct: 58 },
-          ].map((item) => (
-            <div key={item.name} className="flex items-center gap-4">
+          ].map((item, idx) => (
+            <div key={`${item.name}-${idx}`} className="flex items-center gap-4">
               <span className="text-sm font-sans text-body flex-1">{item.name}</span>
               <span className="text-sm text-muted font-sans w-16 text-right">{item.sales} sold</span>
               <div className="w-32 h-2 bg-coconut/10 dark:bg-cream/10 rounded-full overflow-hidden">
