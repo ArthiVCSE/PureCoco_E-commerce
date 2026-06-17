@@ -141,20 +141,20 @@ const AdminDashboard = () => {
               <TrendingUp size={20} className="text-gold" /> Monthly Revenue
             </h2>
           </div>
-            <div className="h-44 flex items-end gap-2">
-              {analyticsData.months.map((month, idx) => {
-                const val = analyticsData.revenueByMonth[idx] || 0;
-                const maxVal = Math.max(...analyticsData.revenueByMonth, 1);
-                const h = Math.round((val / maxVal) * 100);
-                return (
-                  <div key={month} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
-                    <span className="text-[9px] font-bold text-muted group-hover:text-coconut dark:group-hover:text-cream transition-colors">{formatCurrency(val)}</span>
-                    <div className="w-full bg-gold/40 hover:bg-gold rounded-t-md transition-all duration-300 group-hover:shadow-md" style={{ height: `${h}%` }} title={formatCurrency(val)} />
-                    <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{month}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="h-44 flex items-end gap-2">
+            {analyticsData.months.map((month, idx) => {
+              const val = analyticsData.revenueByMonth[idx] || 0;
+              const maxVal = Math.max(...analyticsData.revenueByMonth, 1);
+              const h = Math.round((val / maxVal) * 100);
+              return (
+                <div key={month} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
+                  <span className="text-[9px] font-bold text-muted group-hover:text-coconut dark:group-hover:text-cream transition-colors">{formatCurrency(val)}</span>
+                  <div className="w-full bg-gold/40 hover:bg-gold rounded-t-md transition-all duration-300 group-hover:shadow-md" style={{ height: `${h}%` }} title={formatCurrency(val)} />
+                  <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{month}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Weekly Activity */}
@@ -164,20 +164,20 @@ const AdminDashboard = () => {
               <ShoppingCart size={20} className="text-natural" /> Orders This Week
             </h2>
           </div>
-            <div className="h-44 flex items-end gap-2">
-              {analyticsData.months.map((month, idx) => {
-                const val = analyticsData.ordersByMonth[idx] || 0;
-                const maxVal = Math.max(...analyticsData.ordersByMonth, 1);
-                const h = Math.round((val / maxVal) * 100);
-                return (
-                  <div key={month} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
-                    <span className="text-[10px] font-bold text-muted">{val}</span>
-                    <div className="w-full bg-natural/40 hover:bg-natural rounded-t-md transition-all duration-300" style={{ height: `${h}%` }} />
-                    <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{month}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="h-44 flex items-end gap-2">
+            {analyticsData.months.map((month, idx) => {
+              const val = analyticsData.ordersByMonth[idx] || 0;
+              const maxVal = Math.max(...analyticsData.ordersByMonth, 1);
+              const h = Math.round((val / maxVal) * 100);
+              return (
+                <div key={month} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
+                  <span className="text-[10px] font-bold text-muted">{val}</span>
+                  <div className="w-full bg-natural/40 hover:bg-natural rounded-t-md transition-all duration-300" style={{ height: `${h}%` }} />
+                  <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{month}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

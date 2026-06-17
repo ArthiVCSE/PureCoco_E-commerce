@@ -47,6 +47,7 @@ E-Commerce/
 2. Run `npm install`
 3. Update `.env` with your MongoDB URI
 4. Run `npm run dev` → API at http://localhost:5000
+5. Ensure `REACT_APP_API_URL` is set in `.env` for frontend deployment.
 
 ## Demo Credentials
 
