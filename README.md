@@ -48,6 +48,7 @@ E-Commerce/
 3. Update `.env` with your MongoDB URI
 4. Run `npm run dev` → API at http://localhost:5000
 5. Ensure `REACT_APP_API_URL` is set in `.env` for frontend deployment.
+6. Deploy the frontend to Vercel (or your preferred host) – Vercel will automatically pick up the env variable set in the project settings.
 
 ## Demo Credentials
 
