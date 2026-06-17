@@ -24,7 +24,7 @@ const AdminAnalytics = () => {
         }
       } catch { /* use default mock */ }
     };
-    
+
     load();
     const interval = setInterval(load, 5000);
     return () => {
@@ -51,16 +51,16 @@ const AdminAnalytics = () => {
           </h2>
           <div className="overflow-x-auto pb-2 scrollbar-hide">
             <div className="h-56 min-w-[300px] flex items-end justify-around gap-3">
-            {data.revenueByMonth.map((val, i) => (
-              <div key={data.months[i]} className="flex flex-col items-center gap-2 flex-1">
-                <span className="text-xs font-sans font-semibold text-coconut/70 dark:text-cream/70">{formatCurrency(val)}</span>
-                <div
-                  className="w-full bg-gold/50 rounded-t-lg hover:bg-gold transition-colors"
-                  style={{ height: `${(val / maxRevenue) * 100}%` }}
-                />
-                <span className="text-xs font-sans font-bold text-coconut/80 dark:text-cream/80">{data.months[i]}</span>
-              </div>
-            ))}
+              {data.revenueByMonth.map((val, i) => (
+                <div key={data.months[i]} className="flex flex-col items-center gap-2 flex-1">
+                  <span className="text-xs font-sans font-semibold text-coconut/70 dark:text-cream/70">{formatCurrency(val)}</span>
+                  <div
+                    className="w-full bg-gold/50 rounded-t-lg hover:bg-gold transition-colors"
+                    style={{ height: `${(val / maxRevenue) * 100}%` }}
+                  />
+                  <span className="text-xs font-sans font-bold text-coconut/80 dark:text-cream/80">{data.months[i]}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -71,16 +71,16 @@ const AdminAnalytics = () => {
           </h2>
           <div className="overflow-x-auto pb-2 scrollbar-hide">
             <div className="h-56 min-w-[300px] flex items-end justify-around gap-3">
-            {data.ordersByMonth.map((val, i) => (
-              <div key={data.months[i]} className="flex flex-col items-center gap-2 flex-1">
-                <span className="text-xs font-sans font-semibold text-coconut/70 dark:text-cream/70">{val}</span>
-                <div
-                  className="w-full bg-natural/50 rounded-t-lg hover:bg-natural transition-colors"
-                  style={{ height: `${(val / maxOrders) * 100}%` }}
-                />
-                <span className="text-xs font-sans font-bold text-coconut/80 dark:text-cream/80">{data.months[i]}</span>
-              </div>
-            ))}
+              {data.ordersByMonth.map((val, i) => (
+                <div key={data.months[i]} className="flex flex-col items-center gap-2 flex-1">
+                  <span className="text-xs font-sans font-semibold text-coconut/70 dark:text-cream/70">{val}</span>
+                  <div
+                    className="w-full bg-natural/50 rounded-t-lg hover:bg-natural transition-colors"
+                    style={{ height: `${(val / maxOrders) * 100}%` }}
+                  />
+                  <span className="text-xs font-sans font-bold text-coconut/80 dark:text-cream/80">{data.months[i]}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -14,11 +14,11 @@ import api from '../services/api';
 import { useToast } from '../components/common/Toast';
 
 const trackingSteps = [
-  { status: 'pending',          label: 'Order Placed',     icon: CheckCircle, desc: 'We have received your order' },
-  { status: 'processing',       label: 'Processing',       icon: Package,     desc: 'Items are being packed at our Pollachi facility' },
-  { status: 'shipped',          label: 'Shipped',          icon: Truck,       desc: 'Your package is on its way' },
-  { status: 'out-for-delivery', label: 'Out for Delivery', icon: Navigation,  desc: 'Driver is heading to your address' },
-  { status: 'delivered',        label: 'Delivered',        icon: MapPin,      desc: 'Package delivered successfully' },
+  { status: 'pending', label: 'Order Placed', icon: CheckCircle, desc: 'We have received your order' },
+  { status: 'processing', label: 'Processing', icon: Package, desc: 'Items are being packed at our Pollachi facility' },
+  { status: 'shipped', label: 'Shipped', icon: Truck, desc: 'Your package is on its way' },
+  { status: 'out-for-delivery', label: 'Out for Delivery', icon: Navigation, desc: 'Driver is heading to your address' },
+  { status: 'delivered', label: 'Delivered', icon: MapPin, desc: 'Package delivered successfully' },
 ];
 
 const statusOrder = ['pending', 'processing', 'shipped', 'out-for-delivery', 'delivered'];
@@ -450,8 +450,8 @@ const OrderTracking = () => {
                   {(() => {
                     const t = mapProgress / 100;
                     const mt = 1 - t;
-                    const x = Math.round(mt*mt*mt*60 + 3*mt*mt*t*150 + 3*mt*t*t*300 + t*t*t*420);
-                    const y = Math.round(mt*mt*mt*230 + 3*mt*mt*t*80 + 3*mt*t*t*240 + t*t*t*50);
+                    const x = Math.round(mt * mt * mt * 60 + 3 * mt * mt * t * 150 + 3 * mt * t * t * 300 + t * t * t * 420);
+                    const y = Math.round(mt * mt * mt * 230 + 3 * mt * mt * t * 80 + 3 * mt * t * t * 240 + t * t * t * 50);
                     return (
                       <g transform={`translate(${x - 14}, ${y - 14})`}>
                         <circle cx="14" cy="14" r="18" fill="#C89B3C" fillOpacity="0.2" className="animate-pulse" />
