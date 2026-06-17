@@ -62,7 +62,7 @@ const OrderTracking = () => {
   const [currentStreet, setCurrentStreet] = useState(STREETS[0]);
   const [showMapView, setShowMapView] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isPolling, setIsPolling] = useState(false);
+
 
   const [loadError, setLoadError] = useState('');
   const mapRef = useRef(null);

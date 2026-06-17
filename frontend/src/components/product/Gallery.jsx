@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
+import { ZoomIn } from 'lucide-react';
 import { cn } from '../../utils/formatCurrency';
 
 const Gallery = ({ images, alt = 'Product' }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
 
-  const prev = () => setActiveIndex((i) => (i === 0 ? images.length - 1 : i - 1));
-  const next = () => setActiveIndex((i) => (i === images.length - 1 ? 0 : i + 1));
+
 
   return (
     <div className="space-y-3">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingBag, Heart, Share2, Star, Truck, Shield, RotateCcw, Minus, Plus, GitCompare } from 'lucide-react';
-import productService, { MOCK_REVIEWS } from '../services/productService';
+import productService from '../services/productService';
 import wishlistService from '../services/wishlistService';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -26,7 +26,7 @@ const ProductDetail = () => {
   const [reviewText, setReviewText] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const { addItem } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { addToast } = useToast();
 
   useEffect(() => {

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link, Navigate } from 'react-router-dom';
-import { CreditCard, Smartphone, Building2, Loader } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { CreditCard, Building2 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/common/Toast';
