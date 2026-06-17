@@ -18,6 +18,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({ products: 0, orders: 0, users: 0, revenue: 0, reviews: 0, unreadMessages: 0, unreadNotifications: 0 });
   const [recentOrders, setRecentOrders] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState({ months: [], revenueByMonth: [], ordersByMonth: [] });
 
   useEffect(() => {
     const load = async () => {
@@ -80,6 +81,24 @@ const AdminDashboard = () => {
     load();
   }, []);
 
+  // Fetch analytics data for overview charts
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const { data } = await api.get('/orders/analytics');
+        setAnalyticsData({
+          months: data.months || [],
+          revenueByMonth: data.revenueByMonth || [],
+          ordersByMonth: data.ordersByMonth || [],
+        });
+      } catch (err) {
+        console.error('Failed to fetch analytics', err);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
+
   const orderColumns = [
     { key: 'orderId', label: 'Order', render: row => <span className="font-mono text-xs font-bold">{row.orderId}</span> },
     { key: 'customer', label: 'Customer', render: row => <span className="text-sm font-semibold">{row.customer}</span> },
@@ -122,22 +141,20 @@ const AdminDashboard = () => {
               <TrendingUp size={20} className="text-gold" /> Monthly Revenue
             </h2>
           </div>
-          <div className="h-44 flex items-end gap-2">
-            {[
-              { month: 'Jan', val: 180000 }, { month: 'Feb', val: 220000 }, { month: 'Mar', val: 195000 },
-              { month: 'Apr', val: 280000 }, { month: 'May', val: 310000 }, { month: 'Jun', val: 248000 },
-            ].map(({ month, val }) => {
-              const maxVal = 310000;
-              const h = Math.round((val / maxVal) * 100);
-              return (
-                <div key={month} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
-                  <span className="text-[9px] font-bold text-muted group-hover:text-coconut dark:group-hover:text-cream transition-colors">{formatCurrency(val)}</span>
-                  <div className="w-full bg-gold/40 hover:bg-gold rounded-t-md transition-all duration-300 group-hover:shadow-md" style={{ height: `${h}%` }} title={formatCurrency(val)} />
-                  <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{month}</span>
-                </div>
-              );
-            })}
-          </div>
+            <div className="h-44 flex items-end gap-2">
+              {analyticsData.months.map((month, idx) => {
+                const val = analyticsData.revenueByMonth[idx] || 0;
+                const maxVal = Math.max(...analyticsData.revenueByMonth, 1);
+                const h = Math.round((val / maxVal) * 100);
+                return (
+                  <div key={month} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
+                    <span className="text-[9px] font-bold text-muted group-hover:text-coconut dark:group-hover:text-cream transition-colors">{formatCurrency(val)}</span>
+                    <div className="w-full bg-gold/40 hover:bg-gold rounded-t-md transition-all duration-300 group-hover:shadow-md" style={{ height: `${h}%` }} title={formatCurrency(val)} />
+                    <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{month}</span>
+                  </div>
+                );
+              })}
+            </div>
         </div>
 
         {/* Weekly Activity */}
@@ -147,21 +164,20 @@ const AdminDashboard = () => {
               <ShoppingCart size={20} className="text-natural" /> Orders This Week
             </h2>
           </div>
-          <div className="h-44 flex items-end gap-2">
-            {[
-              { day: 'Mon', val: 18 }, { day: 'Tue', val: 24 }, { day: 'Wed', val: 15 },
-              { day: 'Thu', val: 31 }, { day: 'Fri', val: 22 }, { day: 'Sat', val: 38 }, { day: 'Sun', val: 28 },
-            ].map(({ day, val }) => {
-              const h = Math.round((val / 38) * 100);
-              return (
-                <div key={day} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
-                  <span className="text-[10px] font-bold text-muted">{val}</span>
-                  <div className="w-full bg-natural/40 hover:bg-natural rounded-t-md transition-all duration-300" style={{ height: `${h}%` }} />
-                  <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{day}</span>
-                </div>
-              );
-            })}
-          </div>
+            <div className="h-44 flex items-end gap-2">
+              {analyticsData.months.map((month, idx) => {
+                const val = analyticsData.ordersByMonth[idx] || 0;
+                const maxVal = Math.max(...analyticsData.ordersByMonth, 1);
+                const h = Math.round((val / maxVal) * 100);
+                return (
+                  <div key={month} className="flex flex-col items-center gap-1 flex-1 group cursor-pointer">
+                    <span className="text-[10px] font-bold text-muted">{val}</span>
+                    <div className="w-full bg-natural/40 hover:bg-natural rounded-t-md transition-all duration-300" style={{ height: `${h}%` }} />
+                    <span className="text-[10px] font-bold text-coconut/70 dark:text-cream/70">{month}</span>
+                  </div>
+                );
+              })}
+            </div>
         </div>
       </div>
 
