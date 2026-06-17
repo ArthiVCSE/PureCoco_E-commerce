@@ -59,22 +59,23 @@ const Home = () => {
     <div className="animate-fade-in font-sans">
       {/* Hero — natural full background */}
       <section className="relative min-h-[88vh] flex items-center overflow-hidden">
-          <div className="absolute inset-0">
+        <div className="absolute inset-0">
           <img
             src={IMAGES.hero}
 
             alt="Natural coconut background"
             className="w-full h-full object-cover object-center scale-105"
           />
-          {/* Removed dark/brown hero shade overlay */}
+          {/* Dark overlay for readability */}
+          <div className="absolute inset-0 bg-black/30" />
           <div className="absolute inset-0 bg-gradient-to-r from-coconut/20 via-coconut/10 to-transparent" />
 
 
         </div>
         <div className="container-main relative z-10 py-20">
-          <Badge variant="gold" className="mb-4">From Pollachi Farms</Badge>
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-cream max-w-2xl leading-tight mb-4">
-            Pure Coconut Oil,<br/>
+          <Badge variant='gold' className="mb-4 bg-gold/60 text-white shadow-md">From Pollachi Farms</Badge>
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white max-w-2xl leading-tight mb-4">
+            Pure Coconut Oil,<br />
             <span className="text-gold">Straight from the Source</span>
           </h1>
           <p className="text-cream/90 text-lg max-w-lg mb-8 leading-relaxed font-sans">
@@ -85,7 +86,7 @@ const Home = () => {
               <Button variant="secondary" size="lg" icon={ArrowRight}>Shop Now</Button>
             </Link>
             <Link to="/traceability">
-              <Button variant="outline" size="lg" className="border-cream text-cream hover:bg-cream hover:text-coconut">
+              <Button variant="outline" size="lg" className="border-cream text-white hover:bg-cream/20 hover:text-cream">
                 Verify a Batch
               </Button>
             </Link>
@@ -126,8 +127,8 @@ const Home = () => {
             {loading
               ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
               : products.slice(0, 4).map((product, i) => (
-                  <ProductCard key={product._id} product={product} index={i} />
-                ))}
+                <ProductCard key={product._id} product={product} index={i} />
+              ))}
           </div>
         </div>
       </section>
@@ -197,10 +198,10 @@ const Home = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               { src: IMAGES.processing.dehusk, label: 'De-husking' },
-              { src: IMAGES.processing.grind,  label: 'Grinding Kernel' },
-              { src: IMAGES.processing.press,  label: 'Wood Press Extraction' },
+              { src: IMAGES.processing.grind, label: 'Grinding Kernel' },
+              { src: IMAGES.processing.press, label: 'Wood Press Extraction' },
               { src: IMAGES.processing.filter, label: 'Filtering' },
-              { src: IMAGES.processing.lab,    label: 'Lab Quality Test' },
+              { src: IMAGES.processing.lab, label: 'Lab Quality Test' },
               { src: IMAGES.processing.bottle, label: 'Glass Bottling' },
             ].map(({ src, label }) => (
               <div key={label} className="relative group overflow-hidden rounded-xl aspect-[4/3]">

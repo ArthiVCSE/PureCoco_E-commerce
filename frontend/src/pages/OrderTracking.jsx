@@ -724,10 +724,12 @@ const OrderTracking = () => {
         <Link to="/shop">
           <Button variant="secondary">Continue Shopping</Button>
         </Link>
-        {order.status === 'delivered' && (
-          <Button variant="ghost" onClick={() => addToast('Review feature coming soon!', 'info')}>
-            <Star size={16} /> Write a Review
-          </Button>
+        {order.status === 'delivered' && order.items?.length > 0 && (
+          <Link to={`/product/${order.items[0].product || order.items[0]._id}`}>
+            <Button variant="ghost">
+              <Star size={16} /> Write a Review
+            </Button>
+          </Link>
         )}
       </div>
     </div>

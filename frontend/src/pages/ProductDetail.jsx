@@ -21,7 +21,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
-  const [reviews, setReviews] = useState(MOCK_REVIEWS);
+  const [reviews, setReviews] = useState([]);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
@@ -43,9 +43,9 @@ const ProductDetail = () => {
     const loadReviews = async () => {
       try {
         const { data } = await api.get(`/reviews/product/${id}`);
-        if (Array.isArray(data) && data.length) setReviews(data);
-      } catch {
-        setReviews(MOCK_REVIEWS);
+        if (Array.isArray(data)) setReviews(data);
+      } catch (error) {
+        console.error('Failed to load reviews', error);
       }
     };
     loadReviews();
@@ -82,18 +82,15 @@ const ProductDetail = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      addToast('Please login to submit a review', 'warning');
+      return;
+    }
     if (!reviewText.trim()) {
       addToast('Please write a short review', 'warning');
       return;
     }
     setReviewLoading(true);
-    const localReview = {
-      id: `local-${Date.now()}`,
-      user: user?.name || 'You',
-      rating: Number(reviewRating),
-      text: reviewText.trim(),
-      date: new Date().toISOString(),
-    };
     try {
       const { data } = await api.post('/reviews', {
         productId: product._id,
@@ -106,8 +103,7 @@ const ProductDetail = () => {
       if (error.response?.data?.message) {
         addToast(error.response.data.message, 'error');
       } else {
-        setReviews((prev) => [localReview, ...prev]);
-        addToast('Review saved locally for demo mode', 'info');
+        addToast('Failed to submit review. Please try again.', 'error');
       }
     } finally {
       setReviewText('');
@@ -213,9 +209,8 @@ const ProductDetail = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab.id ? 'border-gold text-gold' : 'border-transparent text-coconut/50 hover:text-coconut'
-              }`}
+              className={`pb-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.id ? 'border-gold text-gold' : 'border-transparent text-coconut/50 hover:text-coconut'
+                }`}
             >
               {tab.label}
             </button>
@@ -300,27 +295,33 @@ const ProductDetail = () => {
               </Button>
             </form>
 
-            {reviews.map((review) => (
-              <div key={review._id || review.id} className="p-5 rounded-xl bg-white dark:bg-coconut-light/10 shadow-soft">
-                <div className="flex items-center gap-3 mb-3">
-                  <img
-                    src={review.image || review.user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80'}
-                    alt=""
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="font-medium text-sm">{review.user?.name || review.user || 'Customer'}</p>
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: review.rating }).map((_, i) => (
-                        <Star key={i} size={12} className="fill-gold text-gold" />
-                      ))}
+            {reviews.length === 0 ? (
+              <p className="text-center text-coconut/60 dark:text-cream/60 py-8">
+                No reviews yet. Be the first to share your experience!
+              </p>
+            ) : (
+              reviews.map((review) => (
+                <div key={review._id || review.id} className="p-5 rounded-xl bg-white dark:bg-coconut-light/10 shadow-soft">
+                  <div className="flex items-center gap-3 mb-3">
+                    <img
+                      src={review.image || review.user?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80'}
+                      alt=""
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div>
+                      <p className="font-medium text-sm">{review.user?.name || review.user || 'Customer'}</p>
+                      <div className="flex gap-0.5">
+                        {Array.from({ length: review.rating }).map((_, i) => (
+                          <Star key={i} size={12} className="fill-gold text-gold" />
+                        ))}
+                      </div>
                     </div>
+                    <span className="ml-auto text-xs text-coconut/40">{formatDate(review.createdAt || review.date)}</span>
                   </div>
-                  <span className="ml-auto text-xs text-coconut/40">{formatDate(review.createdAt || review.date)}</span>
+                  <p className="text-sm text-coconut/70 dark:text-cream/70">{review.text}</p>
                 </div>
-                <p className="text-sm text-coconut/70 dark:text-cream/70">{review.text}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
       </div>
