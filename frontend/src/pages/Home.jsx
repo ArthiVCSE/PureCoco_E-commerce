@@ -59,13 +59,12 @@ const Home = () => {
   return (
     <div className="animate-fade-in font-sans">
       {/* Hero — natural full background */}
-      <section className="relative min-h-[88vh] flex items-center overflow-hidden">
+      <section className="relative min-h-[50vh] md:min-h-[88vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={IMAGES.hero}
-
             alt="Natural coconut background"
-            className="w-full h-full object-cover object-center scale-105"
+            className="w-full h-full object-cover object-center md:scale-105"
           />
           {/* Dark overlay for readability */}
           <div className="absolute inset-0 bg-black/30" />

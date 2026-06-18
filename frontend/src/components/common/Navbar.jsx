@@ -111,30 +111,53 @@ const Navbar = () => {
                 )}
               </button>
               {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-coconut/10 dark:border-cream/10 bg-white dark:bg-coconut-dark shadow-card overflow-hidden">
-                  <div className="px-4 py-3 border-b border-coconut/10 dark:border-cream/10">
-                    <p className="text-sm font-bold text-coconut dark:text-cream">Notifications</p>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="p-4 text-sm text-muted">No notifications yet</p>
-                    ) : notifications.map((item) => (
+                <>
+                  <div
+                    className="fixed inset-0 z-50 bg-coconut/40 backdrop-blur-sm transition-opacity"
+                    onClick={() => setNotificationsOpen(false)}
+                    aria-hidden="true"
+                  />
+                  <div className="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-cream dark:bg-coconut-dark shadow-card flex flex-col animate-slide-in-right">
+                    <div className="flex items-center justify-between p-5 border-b border-coconut/10 dark:border-cream/10">
+                      <div className="flex items-center gap-2">
+                        <Bell size={20} className="text-coconut dark:text-cream" />
+                        <h2 className="font-display text-lg font-semibold text-coconut dark:text-cream">
+                          Notifications
+                        </h2>
+                      </div>
                       <button
-                        key={item._id}
-                        onClick={() => markNotificationRead(item._id)}
-                        className="w-full text-left px-4 py-3 border-b border-coconut/5 dark:border-cream/5 hover:bg-coconut/5 dark:hover:bg-cream/5"
+                        onClick={() => setNotificationsOpen(false)}
+                        className="p-2 rounded hover:bg-coconut/10 dark:hover:bg-cream/10 transition-colors text-coconut dark:text-cream"
                       >
-                        <div className="flex items-start gap-2">
-                          {!item.isRead && <span className="mt-1.5 w-2 h-2 rounded-full bg-gold shrink-0" />}
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-coconut dark:text-cream truncate">{item.title}</p>
-                            <p className="text-xs text-muted line-clamp-2">{item.message}</p>
-                          </div>
-                        </div>
+                        <X size={20} />
                       </button>
-                    ))}
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center p-5">
+                          <Bell size={48} className="text-coconut/20 dark:text-cream/20 mb-4" />
+                          <p className="text-sm text-muted">No notifications yet</p>
+                        </div>
+                      ) : (
+                        notifications.map((item) => (
+                          <button
+                            key={item._id}
+                            onClick={() => markNotificationRead(item._id)}
+                            className="w-full text-left px-5 py-4 border-b border-coconut/5 dark:border-cream/5 hover:bg-coconut/5 dark:hover:bg-cream/5 transition-colors"
+                          >
+                            <div className="flex items-start gap-3">
+                              {!item.isRead && <span className="mt-1.5 w-2 h-2 rounded-full bg-gold shrink-0" />}
+                              <div className="min-w-0 flex-1">
+                                <p className={cn("text-sm font-semibold truncate", item.isRead ? "text-coconut/70 dark:text-cream/70" : "text-coconut dark:text-cream")}>{item.title}</p>
+                                <p className="text-sm text-muted mt-1">{item.message}</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           )}
