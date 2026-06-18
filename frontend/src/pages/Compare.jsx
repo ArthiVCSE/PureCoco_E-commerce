@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { GitCompare, X, Plus } from 'lucide-react';
 import { MOCK_PRODUCTS } from '../services/productService';
+import api from '../services/api';
 import { formatCurrency } from '../utils/formatCurrency';
 import PurityScore from '../components/product/PurityScore';
 import Button from '../components/ui/Button';
@@ -10,13 +11,27 @@ import Badge from '../components/ui/Badge';
 const Compare = () => {
   const [searchParams] = useSearchParams();
   const [selected, setSelected] = useState([]);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data } = await api.get('/products');
+        setProducts(data.products || data);
+      } catch (err) {
+        setProducts(MOCK_PRODUCTS);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    if (products.length === 0) return;
     const ids = searchParams.get('ids')?.split(',') || [];
     if (ids.length) {
-      setSelected(MOCK_PRODUCTS.filter((p) => ids.includes(p._id)).slice(0, 3));
+      setSelected(products.filter((p) => ids.includes(p._id)).slice(0, 3));
     }
-  }, [searchParams]);
+  }, [searchParams, products]);
 
   const addProduct = (product) => {
     if (selected.length >= 3 || selected.find((p) => p._id === product._id)) return;
@@ -39,7 +54,7 @@ const Compare = () => {
     { key: 'farm', label: 'Farm', render: (p) => p.farm.name },
   ];
 
-  const available = MOCK_PRODUCTS.filter((p) => !selected.find((s) => s._id === p._id));
+  const available = products.filter((p) => !selected.find((s) => s._id === p._id));
 
   return (
     <div className="container-main pt-24 pb-16 animate-fade-in">
@@ -55,7 +70,7 @@ const Compare = () => {
         <div className="text-center py-16">
           <p className="text-coconut/70 dark:text-cream/70 font-medium mb-6">No products selected for comparison</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {MOCK_PRODUCTS.map((product) => (
+            {products.map((product) => (
               <button
                 key={product._id}
                 onClick={() => addProduct(product)}

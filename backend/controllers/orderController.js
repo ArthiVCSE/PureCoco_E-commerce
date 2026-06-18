@@ -199,12 +199,37 @@ exports.getAnalytics = async (req, res) => {
       ordersByMonth.push(monthOrders.length);
     }
 
+    const productSales = {};
+    orders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (!productSales[item.product]) {
+            productSales[item.product] = { name: item.name, sales: 0 };
+          }
+          productSales[item.product].sales += item.quantity;
+        });
+      }
+    });
+
+    const topProductsList = Object.values(productSales)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 4);
+
+    const maxSales = Math.max(...topProductsList.map(p => p.sales), 1);
+    
+    const topProducts = topProductsList.map(p => ({
+      name: p.name,
+      sales: p.sales,
+      pct: Math.round((p.sales / maxSales) * 100)
+    }));
+
     res.json({
       totalRevenue,
       totalOrders,
       months,
       revenueByMonth,
-      ordersByMonth
+      ordersByMonth,
+      topProducts
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

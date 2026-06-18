@@ -12,6 +12,12 @@ const AdminAnalytics = () => {
     months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     revenueByMonth: [180000, 220000, 195000, 280000, 310000, 248000],
     ordersByMonth: [45, 52, 48, 68, 72, 58],
+    topProducts: [
+      { name: 'Virgin Cold-Pressed Coconut Oil', sales: 234, pct: 92 },
+      { name: 'Extra Virgin Premium Oil', sales: 189, pct: 78 },
+      { name: 'Ayurvedic Wellness Oil', sales: 142, pct: 65 },
+      { name: 'Hair & Skin Care Oil', sales: 156, pct: 58 },
+    ]
   });
 
   useEffect(() => {
@@ -89,12 +95,7 @@ const AdminAnalytics = () => {
       <div className="p-6 card">
         <h2 className="font-display text-lg font-semibold text-body mb-4">Top Performing Products</h2>
         <div className="space-y-3">
-          {[
-            { name: 'Virgin Cold-Pressed Coconut Oil', sales: 234, pct: 92 },
-            { name: 'Extra Virgin Premium Oil', sales: 189, pct: 78 },
-            { name: 'Ayurvedic Wellness Oil', sales: 142, pct: 65 },
-            { name: 'Hair & Skin Care Oil', sales: 156, pct: 58 },
-          ].map((item, idx) => (
+          {(data.topProducts || []).map((item, idx) => (
             <div key={`${item.name}-${idx}`} className="flex items-center gap-4">
               <span className="text-sm font-sans text-body flex-1">{item.name}</span>
               <span className="text-sm text-muted font-sans w-16 text-right">{item.sales} sold</span>
