@@ -59,20 +59,18 @@ const Home = () => {
   return (
     <div className="animate-fade-in font-sans">
       {/* Hero — natural full background */}
-      <section className="relative min-h-[50vh] md:min-h-[88vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0">
+      <section className="flex flex-col md:block relative md:min-h-[88vh] md:flex md:items-center overflow-hidden bg-coconut">
+        <div className="w-full relative md:absolute md:inset-0">
           <img
             src={IMAGES.hero}
             alt="Natural coconut background"
-            className="w-full h-full object-cover object-center md:scale-105"
+            className="w-full h-auto md:h-full object-cover object-center md:scale-105 block"
           />
           {/* Dark overlay for readability */}
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-r from-coconut/20 via-coconut/10 to-transparent" />
-
-
+          <div className="hidden md:block absolute inset-0 bg-black/30" />
+          <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-coconut/20 via-coconut/10 to-transparent" />
         </div>
-        <div className="container-main relative z-10 py-20">
+        <div className="container-main relative z-10 py-12 md:py-20 flex-1 flex flex-col justify-center">
           <Badge variant='gold' className="mb-4 bg-gold/60 text-white shadow-md">From Pollachi Farms</Badge>
           <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white max-w-2xl leading-tight mb-4">
             Pure Coconut Oil,<br />
